@@ -1,6 +1,6 @@
 # Release Audit — `party_platform_link`
 
-**Repository:** `https://github.com/misonetwork/party-extensions`
+**Repository:** `https://github.com/misofm/party-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -22,9 +22,9 @@ borrowing, Action logic, or entry automation.
 
 | Dependency | Repository/subdirectory | Revision | Mode |
 |---|---|---|---|
-| `miso_party` | `https://github.com/misonetwork/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` | production |
-| `platform_link` | `https://github.com/misonetwork/party-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` | production |
-| `party_social` | `https://github.com/misonetwork/party-extensions.git` / `party_social` | `6bd663033267b7c2fddb7ed8b9ce85f980121e2f` | test-only |
+| `miso_party` | `https://github.com/misofm/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` | production |
+| `platform_link` | `https://github.com/misofm/party-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` | production |
+| `party_social` | `https://github.com/misofm/party-extensions.git` / `party_social` | `6bd663033267b7c2fddb7ed8b9ce85f980121e2f` | test-only |
 
 The manifest has no local-path or floating dependencies. `party_social` is
 excluded from the production graph by `modes = ["test"]`.

@@ -1,6 +1,6 @@
 # Release Audit — `party_genre`
 
-**Repository:** `https://github.com/misonetwork/party-extensions`
+**Repository:** `https://github.com/misofm/party-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -20,9 +20,9 @@ vocabulary object exists; removal is by ID. All mutations require the matching
 
 | Dependency | Repository | Revision |
 |---|---|---|
-| `miso_party` | `https://github.com/misonetwork/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` |
+| `miso_party` | `https://github.com/misofm/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` |
 | `typed_set` | `https://github.com/unconfirmedlabs/typed_set.git` | `b37474cbde166b7ddf8a3b615cd89f90182ace6f` |
-| `genre` | `https://github.com/misonetwork/genre.git` | `069fee03d7cae357d5a805e28eeb24171f10c303` |
+| `genre` | `https://github.com/misofm/genre.git` | `069fee03d7cae357d5a805e28eeb24171f10c303` |
 
 The manifest has no local-path or floating dependencies.
 

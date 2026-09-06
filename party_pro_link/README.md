@@ -99,7 +99,7 @@ Reading or removing a link that was never stored aborts with `ENoLink` (0) at
 
 ## Dependencies
 
-- [`platform_link`](https://github.com/misonetwork/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
+- [`platform_link`](https://github.com/misofm/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
   at exact revision `684eaef752271865f1cbb1aafb819e5bba3c1d6c` — the
   link primitive these payloads ride in, plus
   the shared length backstops (`max_identifier_length()` = 256,

@@ -72,7 +72,7 @@ Surfaced from `typed_set` (abort location `typed_set::typed_set`):
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misonetwork/party) at
+- [`miso_party`](https://github.com/misofm/party) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the authorization core.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at
   `b37474cbde166b7ddf8a3b615cd89f90182ace6f` — dynamic-field set storage,

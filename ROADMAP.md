@@ -1,7 +1,7 @@
 # Miso Party Extensions — Roadmap
 
 Artist/entity profile pages are built by attaching stateful **extensions** to
-the core [`miso_party::party::Party`](https://github.com/misonetwork/party) via
+the core [`miso_party::party::Party`](https://github.com/misofm/party) via
 dynamic fields. Each state-attaching extension owns one coherent slice, gates
 writes with the party's `PartyAdminCap`, and ships independently. Pure payload
 packages (`party_music`, `party_social`, `party_pro_link`) define validated
@@ -114,7 +114,7 @@ design below.
   toggles, featured-media order, profile completeness score, last-updated,
   moderation status, "verified-links-only" (derived from verification stamps).
 - **Party actions:** Composable raw-cap Party inbox receipt and accumulator
-  withdrawal live in `misonetwork/party-actions/party_wallet`; they store no
+  withdrawal live in `misofm/party-actions/party_wallet`; they store no
   profile data. Permissionless Vault automation, when needed, lives separately
   as entry-only plugins that invoke Actions rather than reimplementing them.
 - **Never raw on-chain (PII/payment):** booking/press/sync emails, phone, fees,

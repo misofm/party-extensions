@@ -2,7 +2,7 @@
 
 Artist/entity profile pages on Sui, built as small, independent Move packages.
 The state-attaching **extensions** each add one coherent slice to a core
-[`miso_party::party::Party`](https://github.com/misonetwork/party) as a
+[`miso_party::party::Party`](https://github.com/misofm/party) as a
 dynamic field — bio, roles, tags, links, imagery, and CTAs. This repository
 also contains pure platform payload packages (`party_music`, `party_social`,
 and `party_pro_link`): they construct typed values but never access a `Party`
@@ -65,7 +65,7 @@ Operational Party workflows are not profile extensions. Composable raw-cap
 operations live in **Actions** packages; Vault-based, permissionless automation
 belongs in separate entry-only plugin packages that call those Actions. The
 current custody-agnostic inbox and accumulator Actions live in
-[`misonetwork/party-actions/party_wallet`](https://github.com/misonetwork/party-actions/tree/main/party_wallet).
+[`misofm/party-actions/party_wallet`](https://github.com/misofm/party-actions/tree/main/party_wallet).
 
 ## Conventions
 

@@ -90,7 +90,7 @@ when a link is set or cleared; indexers re-read the field.
 
 ## Dependencies
 
-- [`platform_link`](https://github.com/misonetwork/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
+- [`platform_link`](https://github.com/misofm/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
   at exact revision `684eaef752271865f1cbb1aafb819e5bba3c1d6c` —
   `platform_link::new` wrapping plus the shared
   `max_identifier_length()` backstop.

@@ -92,7 +92,7 @@ validation runs before `platform_link::new` is called.
 
 ## Dependencies
 
-- [`platform_link`](https://github.com/misonetwork/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
+- [`platform_link`](https://github.com/misofm/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
   at exact revision `684eaef752271865f1cbb1aafb819e5bba3c1d6c` —
   `platform_link::new` wraps each payload, and
   `platform_link::max_identifier_length()` supplies the shared length

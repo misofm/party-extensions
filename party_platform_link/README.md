@@ -78,11 +78,11 @@ payload packages, before `set_link` is ever called.
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misonetwork/party) at
+- [`miso_party`](https://github.com/misofm/party) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — `Party` authorization.
-- [`platform_link`](https://github.com/misonetwork/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
+- [`platform_link`](https://github.com/misofm/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
   at `684eaef752271865f1cbb1aafb819e5bba3c1d6c` — all storage mechanics.
-- [`party_social`](https://github.com/misonetwork/party-extensions/tree/6bd663033267b7c2fddb7ed8b9ce85f980121e2f/party_social)
+- [`party_social`](https://github.com/misofm/party-extensions/tree/6bd663033267b7c2fddb7ed8b9ce85f980121e2f/party_social)
   at `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`, test-only via
   `modes = ["test"]` — concrete payloads for generic tests; absent from the
   production dependency graph.

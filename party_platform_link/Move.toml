@@ -5,9 +5,9 @@ license = "Apache 2.0"
 authors = ["Miso Labs, Inc. (build@miso.network)"]
 
 [dependencies]
-miso_party = { git = "https://github.com/misonetwork/party.git", rev = "ffb2915b9bb1802b4c160d3230c560e40bd2b063" }
-platform_link = { git = "https://github.com/misonetwork/party-extensions.git", subdir = "lib/platform_link", rev = "684eaef752271865f1cbb1aafb819e5bba3c1d6c" }
+miso_party = { git = "https://github.com/misofm/party.git", rev = "ffb2915b9bb1802b4c160d3230c560e40bd2b063" }
+platform_link = { git = "https://github.com/misofm/party-extensions.git", subdir = "lib/platform_link", rev = "684eaef752271865f1cbb1aafb819e5bba3c1d6c" }
 
 # Test-only: a concrete platform payload to instantiate the generics in tests.
 # `modes = ["test"]` keeps it out of the production dependency graph.
-party_social = { git = "https://github.com/misonetwork/party-extensions.git", subdir = "party_social", rev = "6bd663033267b7c2fddb7ed8b9ce85f980121e2f", modes = ["test"] }
+party_social = { git = "https://github.com/misofm/party-extensions.git", subdir = "party_social", rev = "6bd663033267b7c2fddb7ed8b9ce85f980121e2f", modes = ["test"] }

@@ -1,6 +1,6 @@
 # Release Audit — `platform_link`
 
-**Repository:** `https://github.com/misonetwork/party-extensions`
+**Repository:** `https://github.com/misofm/party-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`

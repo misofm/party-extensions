@@ -38,7 +38,7 @@ and [README.md](README.md) for the architecture and package overview.
    site, no unused public surface.
 4. **Keep behavior out.** Extensions attach data to `Party`. Composable
    functionality that consumes a raw `PartyAdminCap` belongs in
-   [`misonetwork/party-actions`](https://github.com/misonetwork/party-actions).
+   [`misofm/party-actions`](https://github.com/misofm/party-actions).
    Permissionless Vault automation belongs in an entry-only plugin that calls
    an Action. Do not put operational workflows in an extension.
 5. **Gate every state-attaching write with the cap.** Those writes take

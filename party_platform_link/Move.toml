@@ -6,8 +6,8 @@ authors = ["Miso Labs, Inc. (build@miso.network)"]
 
 [dependencies]
 miso_party = { git = "https://github.com/misofm/party.git", rev = "72fa0c9c982166f51527d20846c2bc365b5c17f6" }
-platform_link = { git = "https://github.com/misofm/party-extensions.git", subdir = "lib/platform_link", rev = "26568e1b8bfdfbff8809da6fbff659509143fbe8" }
+platform_link = { local = "../lib/platform_link" }
 
 # Test-only: a concrete platform payload to instantiate the generics in tests.
 # `modes = ["test"]` keeps it out of the production dependency graph.
-party_social = { git = "https://github.com/misofm/party-extensions.git", subdir = "party_social", rev = "26568e1b8bfdfbff8809da6fbff659509143fbe8", modes = ["test"] }
+party_social = { local = "../party_social", modes = ["test"] }

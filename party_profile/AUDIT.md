@@ -43,8 +43,8 @@ The manifest has no local-path or floating dependencies.
 
 ## Published metadata
 
-The retained `Published.toml` records prior immutable Testnet package
-`0xe01228bbcd4d9bcd4546ca47f50733efdd47c093eeab2a63b2c08092a455a48f`.
+The retained `Published.toml` is the sole record of the prior immutable Testnet package id;
+it is not repeated here.
 Its bytecode predates the pending validator correction. Fresh immutable
 publication uses the admin CLI with `--allow-republish`; only after confirmed
 success may it replace the target network block.

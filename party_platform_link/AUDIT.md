@@ -42,8 +42,8 @@ the production graph by `modes = ["test"]`.
 
 ## Published metadata
 
-The retained `Published.toml` records prior immutable Testnet package
-`0xb1b555e8f02ed32e49fcd13defe0e03755679fd665a5c348f02eb407ebb15b85`.
+The retained `Published.toml` is the sole record of the prior immutable Testnet package id;
+it is not repeated here.
 Its dependency inputs predate the pending exact-pin reconciliation. Fresh
 immutable publication uses the admin CLI with `--allow-republish`; only after
 confirmed success may it replace the target network block.

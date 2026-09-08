@@ -40,8 +40,8 @@ or floating Git dependencies.
 
 ## Published metadata
 
-The retained `Published.toml` records prior immutable Testnet package
-`0x24f10661c815b9d6b8e6a94d7b1b38d53df848735863430d458af5d5481b27c5`.
+The retained `Published.toml` is the sole record of the prior immutable Testnet package id;
+it is not repeated here.
 It is historical deployment metadata and does not attest to pending source.
 Fresh immutable publication uses the admin CLI with `--allow-republish`; only
 after confirmed success may it replace the target network block.

@@ -40,8 +40,8 @@ Git pin and no floating dependency.
 
 ## Published metadata
 
-The retained `Published.toml` records prior immutable Testnet package
-`0x491706bec2d57bbd3e1cda822d3228306f80360c0a965fc3b9293f0f24d33638`.
+The retained `Published.toml` is the sole record of the prior immutable Testnet package id;
+it is not repeated here.
 Its bytecode predates the pending validator refactor even though public behavior
 and ABI are preserved. Fresh immutable publication uses the admin CLI with
 `--allow-republish`; only after confirmed success may it replace the target

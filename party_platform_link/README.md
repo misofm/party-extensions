@@ -78,16 +78,19 @@ payload packages, before `set_link` is ever called.
 
 ## Dependencies
 
-- [`partyos`](https://github.com/misofm/partyos) at
-  `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — `Party` authorization.
-- [`platform_link`](https://github.com/misofm/partyos-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
-  at `684eaef752271865f1cbb1aafb819e5bba3c1d6c` — all storage mechanics.
-- [`party_social`](https://github.com/misofm/partyos-extensions/tree/6bd663033267b7c2fddb7ed8b9ce85f980121e2f/party_social)
-  at `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`, test-only via
-  `modes = ["test"]` — concrete payloads for generic tests; absent from the
+- [`partyos`](https://github.com/misofm/partyos) at exact revision
+  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — `Party` authorization. This
+  is the manifest's only Git pin.
+- [`platform_link`](../lib/platform_link) — a local-path sibling package
+  (`platform_link = { local = "../lib/platform_link" }`) — all storage
+  mechanics.
+- [`party_social`](../party_social) — a local-path sibling package
+  (`party_social = { local = "../party_social", modes = ["test"] }`),
+  test-only; concrete payloads for generic tests, absent from the
   production dependency graph.
 
-All are exact Git pins; this manifest has no local-path dependencies.
+`partyos` is the manifest's only Git pin; `platform_link` and `party_social`
+are local-path dependencies.
 
 ## Integrator notes
 

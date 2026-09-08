@@ -92,15 +92,16 @@ validation runs before `platform_link::new` is called.
 
 ## Dependencies
 
-- [`platform_link`](https://github.com/misofm/partyos-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
-  at exact revision `684eaef752271865f1cbb1aafb819e5bba3c1d6c` —
+- [`platform_link`](../lib/platform_link) — a local-path sibling package
+  in this repository (`platform_link = { local = "../lib/platform_link" }`).
   `platform_link::new` wraps each payload, and
   `platform_link::max_identifier_length()` supplies the shared length
   backstop.
 - No `partyos` dependency, by design: this package defines values, and
   cap-gating is entirely `party_platform_link`'s concern.
 
-The manifest has no local-path dependencies.
+The manifest's only dependency is the local-path `platform_link` sibling
+above.
 
 ## Integrator notes
 

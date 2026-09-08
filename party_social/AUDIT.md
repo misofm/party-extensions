@@ -1,7 +1,7 @@
 # Release Audit — `party_social`
 
 **Repository:** `https://github.com/misofm/partyos-extensions`
-**Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
+**Audit target:** pending working-tree source on `main` (matches the repository's current `HEAD`)
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
 
@@ -18,13 +18,15 @@ format and URL reconstruction remain client policy. The package has no Party,
 cap, storage, event, or automation logic; `party_platform_link` attaches its
 returned values to Party state.
 
-## Exact manifest pins
+## Manifest dependencies
 
-| Dependency | Repository/subdirectory | Revision |
+| Dependency | Kind | Location |
 |---|---|---|
-| `platform_link` | `https://github.com/misofm/partyos-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` |
+| `platform_link` | local-path | `../lib/platform_link` |
 
-The manifest has no local-path or floating dependencies.
+The manifest's only dependency is the local-path `platform_link` sibling
+above (`platform_link = { local = "../lib/platform_link" }`); it carries no
+Git pin and no floating dependency.
 
 ## Verification
 

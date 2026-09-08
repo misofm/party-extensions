@@ -1,7 +1,7 @@
 # Release Audit — `party_cta`
 
 **Repository:** `https://github.com/misofm/partyos-extensions`
-**Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
+**Audit target:** pending working-tree source on `main` (matches the repository's current `HEAD`)
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
 

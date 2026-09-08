@@ -1,7 +1,7 @@
 # Release Audit — `party_platform_link`
 
 **Repository:** `https://github.com/misofm/partyos-extensions`
-**Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
+**Audit target:** pending working-tree source on `main` (matches the repository's current `HEAD`)
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
 
@@ -18,16 +18,17 @@ optional reads, and emits phantom-typed change events. Clear authenticates
 before its absent-state no-op. It adds no payload validation, funds, Vault
 borrowing, Action logic, or entry automation.
 
-## Exact manifest pins
+## Manifest dependencies
 
-| Dependency | Repository/subdirectory | Revision | Mode |
+| Dependency | Kind | Location | Mode |
 |---|---|---|---|
-| `partyos` | `https://github.com/misofm/partyos.git` | `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` | production |
-| `platform_link` | `https://github.com/misofm/partyos-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` | production |
-| `party_social` | `https://github.com/misofm/partyos-extensions.git` / `party_social` | `6bd663033267b7c2fddb7ed8b9ce85f980121e2f` | test-only |
+| `partyos` | Git pin | `https://github.com/misofm/partyos.git` @ `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` | production |
+| `platform_link` | local-path | `../lib/platform_link` | production |
+| `party_social` | local-path | `../party_social` | test-only |
 
-The manifest has no local-path or floating dependencies. `party_social` is
-excluded from the production graph by `modes = ["test"]`.
+`partyos` is the manifest's only Git pin. `platform_link` and `party_social`
+are local-path dependencies, not floating; `party_social` is excluded from
+the production graph by `modes = ["test"]`.
 
 ## Verification
 

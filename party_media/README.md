@@ -53,7 +53,7 @@ with `EUnauthorized` (0) at `partyos::party`.
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at exact revision
-  `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the `Party` /
+  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — the `Party` /
   `PartyAdminCap` authorization core.
 - Otherwise only the Sui framework (`sui::dynamic_field`, `sui::event`). The
   manifest has no local-path or floating dependencies.

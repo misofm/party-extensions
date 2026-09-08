@@ -2,7 +2,7 @@
 
 Artist/entity profile pages on Sui, built as small, independent Move packages.
 The state-attaching **extensions** each add one coherent slice to a core
-[`miso_party::party::Party`](https://github.com/misofm/party) as a
+[`partyos::party::Party`](https://github.com/misofm/partyos) as a
 dynamic field — bio, roles, tags, links, imagery, and CTAs. This repository
 also contains pure platform payload packages (`party_music`, `party_social`,
 and `party_pro_link`): they construct typed values but never access a `Party`
@@ -65,7 +65,7 @@ Operational Party workflows are not profile extensions. Composable raw-cap
 operations live in **Actions** packages; Vault-based, permissionless automation
 belongs in separate entry-only plugin packages that call those Actions. The
 current custody-agnostic inbox and accumulator Actions live in
-[`misofm/party-actions/party_wallet`](https://github.com/misofm/party-actions/tree/main/party_wallet).
+[`misofm/partyos-actions/party_wallet`](https://github.com/misofm/partyos-actions/tree/main/party_wallet).
 
 ## Conventions
 
@@ -90,7 +90,7 @@ current custody-agnostic inbox and accumulator Actions live in
   incompatible data model ships as a new package with an explicit migration.
 - **State-attaching tests always include the wrong cap.** Every state-attaching
   extension has an `expected_failure` test proving another party's
-  `PartyAdminCap` aborts (`EUnauthorized` at `miso_party::party`). This does not
+  `PartyAdminCap` aborts (`EUnauthorized` at `partyos::party`). This does not
   apply to the pure payload packages, which never access a Party or cap.
 
 ## Published metadata

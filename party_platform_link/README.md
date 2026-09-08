@@ -36,7 +36,7 @@ shared backstops (`platform_link::max_identifier_length()` 256 bytes,
 ## API
 
 All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` at `miso_party::party`.
+with `EUnauthorized` at `partyos::party`.
 
 ### Writes (cap-gated)
 
@@ -68,7 +68,7 @@ elsewhere: `party_media`'s quilt id or a role or tag string.)
 
 | Code | Constant | Condition |
 |---|---|---|
-| 0 | `EUnauthorized` (at `miso_party::party`) | The cap does not belong to this party — both writes gate through `party::uid_mut(cap)` before any mutation or event |
+| 0 | `EUnauthorized` (at `partyos::party`) | The cap does not belong to this party — both writes gate through `party::uid_mut(cap)` before any mutation or event |
 
 No error constants are declared in this module, and none surface from
 `platform_link`: `set_link` / `clear_link` call only its non-aborting
@@ -78,11 +78,11 @@ payload packages, before `set_link` is ever called.
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at
+- [`partyos`](https://github.com/misofm/partyos) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — `Party` authorization.
-- [`platform_link`](https://github.com/misofm/party-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
+- [`platform_link`](https://github.com/misofm/partyos-extensions/tree/684eaef752271865f1cbb1aafb819e5bba3c1d6c/lib/platform_link)
   at `684eaef752271865f1cbb1aafb819e5bba3c1d6c` — all storage mechanics.
-- [`party_social`](https://github.com/misofm/party-extensions/tree/6bd663033267b7c2fddb7ed8b9ce85f980121e2f/party_social)
+- [`party_social`](https://github.com/misofm/partyos-extensions/tree/6bd663033267b7c2fddb7ed8b9ce85f980121e2f/party_social)
   at `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`, test-only via
   `modes = ["test"]` — concrete payloads for generic tests; absent from the
   production dependency graph.

@@ -27,7 +27,7 @@ the `PartyAdminCap` through `party::uid_mut(cap)`; views are permissionless.
 ## API
 
 All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` at `miso_party::party`. Views are permissionless.
+with `EUnauthorized` at `partyos::party`. Views are permissionless.
 
 ### Writes (cap-gated)
 
@@ -72,7 +72,7 @@ Surfaced from `typed_set` (abort location `typed_set::typed_set`):
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at
+- [`partyos`](https://github.com/misofm/partyos) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the authorization core.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at
   `b37474cbde166b7ddf8a3b615cd89f90182ace6f` — dynamic-field set storage,

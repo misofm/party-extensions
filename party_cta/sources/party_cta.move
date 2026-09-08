@@ -15,7 +15,7 @@
 /// `PartyAdminCap`; views are permissionless.
 module party_cta::party_cta;
 
-use miso_party::party::{Party, PartyAdminCap};
+use partyos::party::{Party, PartyAdminCap};
 use std::string::String;
 use sui::dynamic_field as df;
 use sui::event::emit;

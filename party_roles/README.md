@@ -24,7 +24,7 @@ Writes are gated by the `PartyAdminCap`; views are permissionless.
 ## API
 
 All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` at `miso_party::party`.
+with `EUnauthorized` at `partyos::party`.
 
 ### Role constructors
 
@@ -77,7 +77,7 @@ Set-mechanics aborts surface from the primitive, at `typed_set::typed_set`:
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at
+- [`partyos`](https://github.com/misofm/partyos) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the authorization core;
   every write goes through `party::uid_mut(cap)`.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at

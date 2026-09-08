@@ -4,7 +4,7 @@
 #[test_only]
 module party_platform_link::party_platform_link_tests;
 
-use miso_party::party;
+use partyos::party;
 use party_platform_link::party_platform_link as links;
 use party_social::party_social::{Self as social, XData, InstagramData};
 use std::unit_test::{assert_eq, destroy};
@@ -103,7 +103,7 @@ fun shared_party_platform_link_workflow() {
 
 // `clear_link` must reject a wrong cap even when no link is present — the cap is
 // verified before the existence check, so authorization never depends on state.
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun clear_link_with_wrong_cap_aborts_when_absent() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);

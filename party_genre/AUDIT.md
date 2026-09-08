@@ -1,6 +1,6 @@
 # Release Audit — `party_genre`
 
-**Repository:** `https://github.com/misofm/party-extensions`
+**Repository:** `https://github.com/misofm/partyos-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -20,7 +20,7 @@ vocabulary object exists; removal is by ID. All mutations require the matching
 
 | Dependency | Repository | Revision |
 |---|---|---|
-| `miso_party` | `https://github.com/misofm/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` |
+| `partyos` | `https://github.com/misofm/partyos.git` | `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` |
 | `typed_set` | `https://github.com/unconfirmedlabs/typed_set.git` | `b37474cbde166b7ddf8a3b615cd89f90182ace6f` |
 | `genre` | `https://github.com/misofm/genre.git` | `069fee03d7cae357d5a805e28eeb24171f10c303` |
 

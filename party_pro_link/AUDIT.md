@@ -1,6 +1,6 @@
 # Release Audit — `party_pro_link`
 
-**Repository:** `https://github.com/misofm/party-extensions`
+**Repository:** `https://github.com/misofm/partyos-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -21,7 +21,7 @@ automation logic; `party_platform_link` attaches its returned values.
 
 | Dependency | Repository/subdirectory | Revision |
 |---|---|---|
-| `platform_link` | `https://github.com/misofm/party-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` |
+| `platform_link` | `https://github.com/misofm/partyos-extensions.git` / `lib/platform_link` | `684eaef752271865f1cbb1aafb819e5bba3c1d6c` |
 
 The manifest has no local-path or floating dependencies.
 

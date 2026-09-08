@@ -15,7 +15,7 @@
 /// re-storing the quilt and calling `set_media` with the new id.
 module party_media::party_media;
 
-use miso_party::party::{Party, PartyAdminCap};
+use partyos::party::{Party, PartyAdminCap};
 use sui::dynamic_field as df;
 use sui::event::emit;
 

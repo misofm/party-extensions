@@ -4,7 +4,7 @@
 #[test_only]
 module party_media::party_media_tests;
 
-use miso_party::party;
+use partyos::party;
 use party_media::party_media as media;
 use std::unit_test::{assert_eq, destroy};
 use sui::test_scenario::{Self as ts};
@@ -85,7 +85,7 @@ fun rejects_zero_quilt() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun set_media_with_wrong_cap_aborts() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);

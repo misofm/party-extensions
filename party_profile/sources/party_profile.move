@@ -16,7 +16,7 @@ module party_profile::party_profile;
 
 use country_code::country_code::CountryCode;
 use language_code::language_code::LanguageCode;
-use miso_party::party::{Party, PartyAdminCap};
+use partyos::party::{Party, PartyAdminCap};
 use std::string::String;
 use sui::dynamic_field as df;
 use sui::event::emit;

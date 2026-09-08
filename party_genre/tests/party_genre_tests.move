@@ -6,7 +6,7 @@ module party_genre::party_genre_tests;
 
 use genre::genre as g;
 use genre::genre::{GenreRegistry, Genre};
-use miso_party::party;
+use partyos::party;
 // Aliased so the bare `party_genre` name stays free for `location = …`.
 use party_genre::party_genre as pg;
 use std::unit_test::{assert_eq, destroy};
@@ -179,7 +179,7 @@ fun rejects_over_max() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun add_genre_with_wrong_cap_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());
@@ -196,7 +196,7 @@ fun add_genre_with_wrong_cap_aborts() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun add_genre_with_wrong_cap_on_full_set_aborts() {
     let mut scenario = ts::begin(CREATOR);
     g::init_for_testing(scenario.ctx());

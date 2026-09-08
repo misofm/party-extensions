@@ -25,7 +25,7 @@ proof, the capacity, and the typed events.
 
 All writes require `&PartyAdminCap` for the exact party and go through
 `party::uid_mut(cap)`; a wrong cap aborts with `EUnauthorized` at
-`miso_party::party`. Views are permissionless.
+`partyos::party`. Views are permissionless.
 
 ### Writes (cap-gated)
 
@@ -61,11 +61,11 @@ surfaces from a dependency:
 | 0 | `EDuplicateItem` | `typed_set::typed_set` | `add_genre` with a genre already in the set |
 | 1 | `EItemNotPresent` | `typed_set::typed_set` | `remove_genre` with an id not in the set (or no set stored) |
 | 2 | `EMaxItemsExceeded` | `typed_set::typed_set` | `add_genre` when the set already holds `MAX_GENRES` (20) genres |
-| 0 | `EUnauthorized` | `miso_party::party` | any write with a cap for a different party |
+| 0 | `EUnauthorized` | `partyos::party` | any write with a cap for a different party |
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at
+- [`partyos`](https://github.com/misofm/partyos) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — `Party` authorization.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at
   `b37474cbde166b7ddf8a3b615cd89f90182ace6f` — bounded-set storage,

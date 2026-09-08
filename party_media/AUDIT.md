@@ -1,6 +1,6 @@
 # Release Audit — `party_media`
 
-**Repository:** `https://github.com/misofm/party-extensions`
+**Repository:** `https://github.com/misofm/partyos-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -20,7 +20,7 @@ an off-chain convention, and no media bytes or funds are stored.
 
 | Dependency | Repository | Revision |
 |---|---|---|
-| `miso_party` | `https://github.com/misofm/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` |
+| `partyos` | `https://github.com/misofm/partyos.git` | `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` |
 
 The manifest has no local-path or floating dependencies.
 

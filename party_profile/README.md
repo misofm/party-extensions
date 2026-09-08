@@ -25,7 +25,7 @@ date comes from the party's creation event (the indexer has it for free).
 ## API
 
 All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` at `miso_party::party`.
+with `EUnauthorized` at `partyos::party`.
 
 ### Writes (cap-gated)
 
@@ -64,12 +64,12 @@ with `EUnauthorized` at `miso_party::party`.
 | 5 | `ENoProfile` | `profile()` with no profile set |
 | 6 | `EDuplicateLanguage` | A language tag appears more than once |
 
-Both writes also surface `EUnauthorized` (0) at `miso_party::party` on a
+Both writes also surface `EUnauthorized` (0) at `partyos::party` on a
 wrong cap.
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at
+- [`partyos`](https://github.com/misofm/partyos) at
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the `Party` authorization
   core.
 - [`country_code`](https://github.com/unconfirmedlabs/country_code) at

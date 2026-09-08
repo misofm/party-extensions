@@ -1,7 +1,7 @@
 # Miso Party Extensions — Roadmap
 
 Artist/entity profile pages are built by attaching stateful **extensions** to
-the core [`miso_party::party::Party`](https://github.com/misofm/party) via
+the core [`partyos::party::Party`](https://github.com/misofm/partyos) via
 dynamic fields. Each state-attaching extension owns one coherent slice, gates
 writes with the party's `PartyAdminCap`, and ships independently. Pure payload
 packages (`party_music`, `party_social`, `party_pro_link`) define validated
@@ -56,7 +56,7 @@ Two structural facts that remove large parts of the wishlist:
 | `party_music` (payload) | Pure artist-profile payloads: Spotify, Bandcamp, SoundCloud, Apple Music, Deezer, Tidal, Amazon, Audiomack |
 | `party_profile` (v1) | bio_short, bio_long, country (`country_code`), languages (`language_code`) |
 | `party_genre` | Genre-id tag set, validated against the `genre` vocabulary (`&Genre`) |
-| `miso-protocol-extensions/lib/genre` | Extracted vocabulary primitive (Sui-only), shared by releases + parties |
+| `musicos-extensions/lib/genre` | Extracted vocabulary primitive (Sui-only), shared by releases + parties |
 
 ---
 
@@ -114,7 +114,7 @@ design below.
   toggles, featured-media order, profile completeness score, last-updated,
   moderation status, "verified-links-only" (derived from verification stamps).
 - **Party actions:** Composable raw-cap Party inbox receipt and accumulator
-  withdrawal live in `misofm/party-actions/party_wallet`; they store no
+  withdrawal live in `misofm/partyos-actions/party_wallet`; they store no
   profile data. Permissionless Vault automation, when needed, lives separately
   as entry-only plugins that invoke Actions rather than reimplementing them.
 - **Never raw on-chain (PII/payment):** booking/press/sync emails, phone, fees,

@@ -14,7 +14,7 @@
 /// error codes. Gated by the `PartyAdminCap`; views are permissionless.
 module party_roles::party_roles;
 
-use miso_party::party::{Party, PartyAdminCap};
+use partyos::party::{Party, PartyAdminCap};
 use std::string::String;
 use sui::event::emit;
 use typed_set::typed_set as set;

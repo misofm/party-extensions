@@ -6,7 +6,7 @@ module party_profile::party_profile_tests;
 
 use country_code::country_code as cc;
 use language_code::language_code as lc;
-use miso_party::party;
+use partyos::party;
 use party_profile::party_profile as profile;
 use std::unit_test::{assert_eq, destroy};
 use sui::test_scenario::{Self as ts};
@@ -213,7 +213,7 @@ fun rejects_duplicate_languages() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun set_profile_with_wrong_cap_aborts() {
     let ctx = &mut tx_context::dummy();
     let (mut p, _cap) = new_party(ctx);

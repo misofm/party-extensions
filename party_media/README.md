@@ -21,7 +21,7 @@ client convention, derived off-chain — never stored here.
 ## API
 
 All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` (0) at `miso_party::party`.
+with `EUnauthorized` (0) at `partyos::party`.
 
 ### Writes (cap-gated)
 
@@ -52,7 +52,7 @@ with `EUnauthorized` (0) at `miso_party::party`.
 
 ## Dependencies
 
-- [`miso_party`](https://github.com/misofm/party) at exact revision
+- [`partyos`](https://github.com/misofm/partyos) at exact revision
   `ffb2915b9bb1802b4c160d3230c560e40bd2b063` — the `Party` /
   `PartyAdminCap` authorization core.
 - Otherwise only the Sui framework (`sui::dynamic_field`, `sui::event`). The

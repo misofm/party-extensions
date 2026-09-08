@@ -17,7 +17,7 @@
 /// quilt id or a role or tag string.)
 module party_platform_link::party_platform_link;
 
-use miso_party::party::{Party, PartyAdminCap};
+use partyos::party::{Party, PartyAdminCap};
 use platform_link::platform_link::{Self, PlatformLink};
 use sui::event::emit;
 

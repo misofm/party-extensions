@@ -4,7 +4,7 @@
 #[test_only]
 module party_tags::party_tags_tests;
 
-use miso_party::party;
+use partyos::party;
 use party_tags::party_tags as tags;
 use std::unit_test::{assert_eq, destroy};
 use sui::test_scenario::{Self as ts};
@@ -121,7 +121,7 @@ fun rejects_over_max() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun add_tag_with_wrong_cap_aborts() {
     let ctx = &mut tx_context::dummy();
     let (mut p, _cap) = new_party(ctx);
@@ -132,7 +132,7 @@ fun add_tag_with_wrong_cap_aborts() {
     abort
 }
 
-#[test, expected_failure(abort_code = EUnauthorized, location = miso_party::party)]
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
 fun add_tag_with_wrong_cap_on_full_set_aborts() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);

@@ -1,6 +1,6 @@
 # Release Audit — `party_profile`
 
-**Repository:** `https://github.com/misofm/party-extensions`
+**Repository:** `https://github.com/misofm/partyos-extensions`
 **Audit target:** pending working-tree source based on `6bd663033267b7c2fddb7ed8b9ce85f980121e2f`
 **Date:** 2026-09-02
 **Toolchain:** `sui 1.78.1-722ac4fcf484`
@@ -22,7 +22,7 @@ Set and clear require the matching `PartyAdminCap`; views are permissionless.
 
 | Dependency | Repository | Revision |
 |---|---|---|
-| `miso_party` | `https://github.com/misofm/party.git` | `ffb2915b9bb1802b4c160d3230c560e40bd2b063` |
+| `partyos` | `https://github.com/misofm/partyos.git` | `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` |
 | `country_code` | `https://github.com/unconfirmedlabs/country_code.git` | `b4c92cb7f772879335344d7b6499b5fa4eafef56` |
 | `language_code` | `https://github.com/unconfirmedlabs/language_code.git` | `61542357f3d2ff989d120185046def7cf6c8bdcb` |
 

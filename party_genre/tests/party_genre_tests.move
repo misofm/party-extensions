@@ -30,6 +30,35 @@ fun create_genre(scenario: &Scenario, name: vector<u8>): ID {
     id
 }
 
+/// Mints `count` distinct single-letter vocabulary entries for capacity tests.
+fun create_letter_genres(scenario: &Scenario, count: u64): vector<ID> {
+    let mut registry = scenario.take_shared<GenreRegistry>();
+    let mut ids = vector[];
+    count.do!(|i| {
+        let name = std::string::utf8(vector[((65 + i) as u8)]);
+        ids.push_back(g::derive_address(&registry, name).to_id());
+        g::new(&mut registry, name);
+    });
+    ts::return_shared(registry);
+    ids
+}
+
+fun fill_genres_from(
+    scenario: &Scenario,
+    p: &mut party::Party,
+    cap: &party::PartyAdminCap,
+    ids: &vector<ID>,
+    start: u64,
+    count: u64,
+) {
+    count.do!(|offset| {
+        let i = start + offset;
+        let genre = scenario.take_immutable_by_id<Genre>(*ids.borrow(i));
+        pg::add_genre(p, cap, &genre);
+        ts::return_immutable(genre);
+    });
+}
+
 fun new_party(ctx: &mut TxContext): (party::Party, party::PartyAdminCap) {
     {
         let clock = sui::clock::create_for_testing(ctx);
@@ -60,19 +89,25 @@ fun assert_added_events(id1: ID, id2: ID, id3: ID, party_id: address, admin_cap_
     assert_eq!(after, vector[id1.to_address()]);
     assert_eq!(max, MAX_GENRES);
 
-    let (_, _, event_genre_id, event_name, before, after, _) =
+    let (event_party_id, event_cap_id, event_genre_id, event_name, before, after, max) =
         pg::added_event_fields(&added[1]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
     assert_eq!(event_genre_id, id2.to_address());
     assert_eq!(event_name, b"AMBIENT");
     assert_eq!(before, vector[id1.to_address()]);
     assert_eq!(after, vector[id1.to_address(), id2.to_address()]);
+    assert_eq!(max, MAX_GENRES);
 
-    let (_, _, event_genre_id, event_name, before, after, _) =
+    let (event_party_id, event_cap_id, event_genre_id, event_name, before, after, max) =
         pg::added_event_fields(&added[2]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
     assert_eq!(event_genre_id, id3.to_address());
     assert_eq!(event_name, b"TECHNO");
     assert_eq!(before, vector[id1.to_address(), id2.to_address()]);
     assert_eq!(after, vector[id1.to_address(), id2.to_address(), id3.to_address()]);
+    assert_eq!(max, MAX_GENRES);
 }
 
 fun assert_middle_removed_event(id1: ID, id2: ID, id3: ID, party_id: address, admin_cap_id: address) {
@@ -87,35 +122,89 @@ fun assert_middle_removed_event(id1: ID, id2: ID, id3: ID, party_id: address, ad
     assert_eq!(after, vector[id1.to_address(), id3.to_address()]);
 }
 
-fun assert_final_removed_event(id3: ID) {
+fun assert_final_removed_event(id3: ID, party_id: address, admin_cap_id: address) {
     let removed = event::events_by_type<pg::GenreRemovedEvent>();
     assert_eq!(removed.length(), 3);
-    let (_, _, event_genre_id, before, after) = pg::removed_event_fields(&removed[2]);
+    let (event_party_id, event_cap_id, event_genre_id, before, after) =
+        pg::removed_event_fields(&removed[2]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
     assert_eq!(event_genre_id, id3.to_address());
     assert_eq!(before, vector[id3.to_address()]);
     assert_eq!(after, vector[]);
 }
 
-fun assert_readded_event(id1: ID) {
+fun assert_added_event_at(
+    event_index: u64,
+    expected_count: u64,
+    genre_id: ID,
+    genre_name: vector<u8>,
+    expected_before: vector<address>,
+    expected_after: vector<address>,
+    party_id: address,
+    admin_cap_id: address,
+) {
     let added = event::events_by_type<pg::GenreAddedEvent>();
-    assert_eq!(added.length(), 4);
-    let (_, _, event_genre_id, event_name, before, after, _) =
-        pg::added_event_fields(&added[3]);
-    assert_eq!(event_genre_id, id1.to_address());
-    assert_eq!(event_name, b"HIP_HOP");
-    assert_eq!(before, vector[]);
-    assert_eq!(after, vector[id1.to_address()]);
-}
-
-fun assert_cleared_event(id1: ID, party_id: address, admin_cap_id: address) {
-    let cleared = event::events_by_type<pg::GenresClearedEvent>();
-    assert_eq!(cleared.length(), 1);
-    let (event_party_id, event_cap_id, before, after) =
-        pg::cleared_event_fields(&cleared[0]);
+    assert_eq!(added.length(), expected_count);
+    let (event_party_id, event_cap_id, event_genre_id, event_name, before, after, max) =
+        pg::added_event_fields(&added[event_index]);
     assert_eq!(event_party_id, party_id);
     assert_eq!(event_cap_id, admin_cap_id);
-    assert_eq!(before, vector[id1.to_address()]);
+    assert_eq!(event_genre_id, genre_id.to_address());
+    assert_eq!(event_name, genre_name);
+    assert_eq!(before, expected_before);
+    assert_eq!(after, expected_after);
+    assert_eq!(max, MAX_GENRES);
+}
+
+fun assert_cleared_event_at(
+    event_index: u64,
+    expected_count: u64,
+    expected_before: vector<address>,
+    party_id: address,
+    admin_cap_id: address,
+) {
+    let cleared = event::events_by_type<pg::GenresClearedEvent>();
+    assert_eq!(cleared.length(), expected_count);
+    let (event_party_id, event_cap_id, before, after) =
+        pg::cleared_event_fields(&cleared[event_index]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
+    assert_eq!(before, expected_before);
     assert_eq!(after, vector[]);
+}
+
+fun assert_full_add_events(ids: &vector<ID>, party_id: address, admin_cap_id: address) {
+    let added = event::events_by_type<pg::GenreAddedEvent>();
+    assert_eq!(added.length(), MAX_GENRES);
+    let mut expected_before = vector[];
+    MAX_GENRES.do!(|i| {
+        let genre_id = *ids.borrow(i);
+        let expected_name = vector[((65 + i) as u8)];
+        let expected_after = {
+            let mut after = expected_before;
+            after.push_back(genre_id.to_address());
+            after
+        };
+        let (event_party_id, event_cap_id, event_genre_id, event_name, before, after, max) =
+            pg::added_event_fields(&added[i]);
+        assert_eq!(event_party_id, party_id);
+        assert_eq!(event_cap_id, admin_cap_id);
+        assert_eq!(event_genre_id, genre_id.to_address());
+        assert_eq!(event_name, expected_name);
+        assert_eq!(before, expected_before);
+        assert_eq!(after, expected_after);
+        assert_eq!(max, MAX_GENRES);
+        expected_before.push_back(genre_id.to_address());
+    });
+}
+
+fun assert_populated_views_silent(p: &party::Party, expected: vector<ID>) {
+    let events_before = event::num_events();
+    assert!(pg::has_genres(p));
+    assert!(pg::has_genre(p, expected[0]));
+    assert_eq!(pg::genres(p), expected);
+    assert_eq!(event::num_events(), events_before);
 }
 
 // === Tests ===
@@ -165,22 +254,77 @@ fun add_remove_and_query() {
     pg::remove_genre(&mut p, &cap, id1);
     pg::remove_genre(&mut p, &cap, id3);
     assert!(!pg::has_genres(&p));
-    assert_final_removed_event(id3);
+    assert_final_removed_event(id3, party_id, admin_cap_id);
 
     // Re-adding after field deletion starts a fresh ordered snapshot.
     pg::add_genre(&mut p, &cap, &genre1);
-    assert_readded_event(id1);
+    assert_added_event_at(
+        3,
+        4,
+        id1,
+        b"HIP_HOP",
+        vector[],
+        vector[id1.to_address()],
+        party_id,
+        admin_cap_id,
+    );
+    pg::add_genre(&mut p, &cap, &genre2);
+    assert_added_event_at(
+        4,
+        5,
+        id2,
+        b"AMBIENT",
+        vector[id1.to_address()],
+        vector[id1.to_address(), id2.to_address()],
+        party_id,
+        admin_cap_id,
+    );
+    pg::add_genre(&mut p, &cap, &genre3);
+    assert_added_event_at(
+        5,
+        6,
+        id3,
+        b"TECHNO",
+        vector[id1.to_address(), id2.to_address()],
+        vector[id1.to_address(), id2.to_address(), id3.to_address()],
+        party_id,
+        admin_cap_id,
+    );
 
-    // A populated clear emits one event with an empty after snapshot.
+    // Views over a populated set are silent and preserve complete order.
+    assert_populated_views_silent(&p, vector[id1, id2, id3]);
+
+    // A populated clear emits exactly one event with the complete prior order.
     pg::clear_genres(&mut p, &cap);
     assert!(!pg::has_genres(&p));
-    assert_cleared_event(id1, party_id, admin_cap_id);
+    assert_cleared_event_at(
+        0,
+        1,
+        vector[id1.to_address(), id2.to_address(), id3.to_address()],
+        party_id,
+        admin_cap_id,
+    );
+
+    // Re-adding after clear emits one complete add event from an empty set.
+    pg::add_genre(&mut p, &cap, &genre1);
+    assert_added_event_at(
+        6,
+        7,
+        id1,
+        b"HIP_HOP",
+        vector[],
+        vector[id1.to_address()],
+        party_id,
+        admin_cap_id,
+    );
+    pg::clear_genres(&mut p, &cap);
+    assert_cleared_event_at(1, 2, vector[id1.to_address()], party_id, admin_cap_id);
 
     // Clearing an absent set (including repeatedly) is authorized but silent.
     let events_before = event::num_events();
     pg::clear_genres(&mut p, &cap);
     pg::clear_genres(&mut p, &cap);
-    assert_eq!(event::events_by_type<pg::GenresClearedEvent>().length(), 1);
+    assert_eq!(event::events_by_type<pg::GenresClearedEvent>().length(), 2);
     assert_eq!(event::num_events(), events_before);
 
     // Read-only views do not emit events.
@@ -253,6 +397,39 @@ fun rejects_duplicate() {
     abort
 }
 
+#[test, expected_failure(abort_code = 0, location = typed_set::typed_set)] // EDuplicateItem takes precedence
+fun authorized_duplicate_on_full_set_aborts_as_duplicate() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let ids = create_letter_genres(&scenario, MAX_GENRES + 1);
+
+    scenario.next_tx(CREATOR);
+    let (mut p, cap) = new_party(scenario.ctx());
+    let duplicate = scenario.take_immutable_by_id<Genre>(*ids.borrow(0));
+    pg::add_genre(&mut p, &cap, &duplicate);
+    fill_genres_from(&scenario, &mut p, &cap, &ids, 1, MAX_GENRES - 1);
+    pg::add_genre(&mut p, &cap, &duplicate); // duplicate must beat capacity
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun wrong_cap_duplicate_on_full_set_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let ids = create_letter_genres(&scenario, MAX_GENRES);
+
+    scenario.next_tx(CREATOR);
+    let (mut p, cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    let duplicate = scenario.take_immutable_by_id<Genre>(*ids.borrow(0));
+    pg::add_genre(&mut p, &cap, &duplicate);
+    fill_genres_from(&scenario, &mut p, &cap, &ids, 1, MAX_GENRES - 1);
+    pg::add_genre(&mut p, &other_cap, &duplicate); // auth must beat duplicate/capacity
+    abort
+}
+
 #[test, expected_failure(abort_code = 1, location = typed_set::typed_set)] // EItemNotPresent
 fun remove_absent_aborts() {
     let mut scenario = ts::begin(CREATOR);
@@ -288,13 +465,15 @@ fun rejects_over_max() {
 
     scenario.next_tx(CREATOR);
     let (mut p, cap) = new_party(scenario.ctx());
+    let party_id = object::id(&p).to_address();
+    let admin_cap_id = object::id(&cap).to_address();
     MAX_GENRES.do!(|i| {
         let genre = scenario.take_immutable_by_id<Genre>(*ids.borrow(i));
         pg::add_genre(&mut p, &cap, &genre);
         ts::return_immutable(genre);
     });
     assert_eq!(pg::genres(&p).length(), MAX_GENRES);
-    assert_eq!(event::events_by_type<pg::GenreAddedEvent>().length(), MAX_GENRES);
+    assert_full_add_events(&ids, party_id, admin_cap_id);
     let last = scenario.take_immutable_by_id<Genre>(*ids.borrow(MAX_GENRES));
     pg::add_genre(&mut p, &cap, &last); // the (MAX_GENRES + 1)-th aborts
     abort
@@ -307,6 +486,76 @@ fun remove_from_missing_field_aborts() {
     scenario.next_tx(CREATOR);
     let (mut p, cap) = new_party(scenario.ctx());
     pg::remove_genre(&mut p, &cap, fresh_id(scenario.ctx()));
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun remove_with_wrong_cap_and_present_member_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let id = create_genre(&scenario, b"HIP_HOP");
+
+    scenario.next_tx(CREATOR);
+    let genre = scenario.take_immutable_by_id<Genre>(id);
+    let (mut p, cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    pg::add_genre(&mut p, &cap, &genre);
+    pg::remove_genre(&mut p, &other_cap, id);
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun remove_with_wrong_cap_and_missing_member_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let id = create_genre(&scenario, b"HIP_HOP");
+
+    scenario.next_tx(CREATOR);
+    let genre = scenario.take_immutable_by_id<Genre>(id);
+    let (mut p, cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    pg::add_genre(&mut p, &cap, &genre);
+    pg::remove_genre(&mut p, &other_cap, fresh_id(scenario.ctx()));
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun remove_with_wrong_cap_and_missing_field_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let (mut p, _cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    pg::remove_genre(&mut p, &other_cap, fresh_id(scenario.ctx()));
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun clear_with_wrong_cap_and_populated_set_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let id = create_genre(&scenario, b"HIP_HOP");
+
+    scenario.next_tx(CREATOR);
+    let genre = scenario.take_immutable_by_id<Genre>(id);
+    let (mut p, cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    pg::add_genre(&mut p, &cap, &genre);
+    pg::clear_genres(&mut p, &other_cap);
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun clear_with_wrong_cap_and_absent_set_aborts_as_unauthorized() {
+    let mut scenario = ts::begin(CREATOR);
+    g::init_for_testing(scenario.ctx());
+    scenario.next_tx(CREATOR);
+    let (mut p, _cap) = new_party(scenario.ctx());
+    let (_other, other_cap) = new_party(scenario.ctx());
+    pg::clear_genres(&mut p, &other_cap);
     abort
 }
 

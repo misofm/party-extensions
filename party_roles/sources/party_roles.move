@@ -12,6 +12,9 @@
 /// the role type, name validation, the capacity, and the typed events.
 /// Duplicate / not-present / over-max aborts come from `typed_set` with its own
 /// error codes. Gated by the `PartyAdminCap`; views are permissionless.
+/// Mutation events carry the party and cap addresses, a stable kind/name pair,
+/// and before/after counts; a populated clear also carries ordered removed
+/// role snapshots.
 module party_roles::party_roles;
 
 use partyos::party::{Party, PartyAdminCap};

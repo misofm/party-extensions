@@ -49,9 +49,9 @@ with `EUnauthorized` at `partyos::party`. Views are permissionless.
 
 | Event | When | Payload |
 |---|---|---|
-| `TagAddedEvent` | `add_tag` succeeds | `party_id`, `tag` |
-| `TagRemovedEvent` | `remove_tag` succeeds | `party_id`, `tag` |
-| `TagsClearedEvent` | `clear_tags` removes an existing set (not emitted on the no-op path) | `party_id` |
+| `TagAddedEvent` | `add_tag` succeeds | `party_id`, `admin_cap_id`, raw `tag` bytes, before/after tag counts |
+| `TagRemovedEvent` | `remove_tag` succeeds | `party_id`, `admin_cap_id`, raw `tag` bytes, before/after tag counts |
+| `TagsClearedEvent` | `clear_tags` removes an existing set (not emitted on the no-op path) | `party_id`, `admin_cap_id`, ordered `removed_tags` raw bytes, before/after tag counts |
 
 ## Errors
 
@@ -73,7 +73,7 @@ Surfaced from `typed_set` (abort location `typed_set::typed_set`):
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at
-  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — the authorization core.
+  `841a875a4989082a0ebeb1beb464b71f9ea2bd73` — the authorization core.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at
   `b37474cbde166b7ddf8a3b615cd89f90182ace6f` — dynamic-field set storage,
   duplicate/not-present/capacity aborts, and field reclamation.
@@ -88,9 +88,10 @@ Both are exact Git pins; this manifest has no local-path dependencies.
 - **Untrusted input.** A tag is free-form artist input, bounded only at 50
   bytes — sanitize before rendering, same convention as the handles stored by
   the platform-link payload packages.
-- **Events carry the tag.** An indexer can maintain the current set from
-  `TagAddedEvent` / `TagRemovedEvent` alone; on `TagsClearedEvent`, drop the
-  whole set. Re-read with `tags()` to re-sync.
+- **Events carry the tag and count transition.** An indexer can maintain the
+  current set from `TagAddedEvent` / `TagRemovedEvent` alone; on
+  `TagsClearedEvent`, drop the whole set using its ordered snapshot. Re-read
+  with `tags()` to re-sync.
 - **`has_tags` means "carries tags"**, not "has ever tagged" — the field is
   reclaimed when the last tag leaves.
 - `tags()` returns insertion order, not alphabetical — sort client-side if

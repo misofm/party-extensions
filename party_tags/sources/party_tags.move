@@ -11,7 +11,9 @@
 /// validation, the capacity, and the typed events. Duplicate / not-present /
 /// over-max aborts come from `typed_set` with its own error codes. Tags are
 /// stored as given (exact dedupe); normalization for search/display is a client
-/// concern. Gated by the `PartyAdminCap`; views are permissionless.
+/// concern. Gated by the `PartyAdminCap`; views are permissionless. Mutation
+/// events carry the party and cap addresses, the raw tag bytes, and before/after
+/// counts; a populated clear also carries the ordered raw tag snapshots.
 module party_tags::party_tags;
 
 use partyos::party::{Party, PartyAdminCap};
@@ -43,19 +45,29 @@ public struct TagsKey() has copy, drop, store;
 
 /// Emitted when a tag is added to a party.
 public struct TagAddedEvent has copy, drop {
-    party_id: ID,
-    tag: String,
+    party_id: address,
+    admin_cap_id: address,
+    tag: vector<u8>,
+    tag_count_before: u64,
+    tag_count_after: u64,
 }
 
 /// Emitted when a tag is removed from a party.
 public struct TagRemovedEvent has copy, drop {
-    party_id: ID,
-    tag: String,
+    party_id: address,
+    admin_cap_id: address,
+    tag: vector<u8>,
+    tag_count_before: u64,
+    tag_count_after: u64,
 }
 
 /// Emitted when a party's entire tag set is removed.
 public struct TagsClearedEvent has copy, drop {
-    party_id: ID,
+    party_id: address,
+    admin_cap_id: address,
+    removed_tags: vector<vector<u8>>,
+    tag_count_before: u64,
+    tag_count_after: u64,
 }
 
 // === Write API ===
@@ -65,27 +77,59 @@ public struct TagsClearedEvent has copy, drop {
 public fun add_tag(self: &mut Party, cap: &PartyAdminCap, tag: String) {
     assert!(!tag.is_empty(), EEmptyTag);
     assert!(tag.length() <= MAX_TAG_LENGTH, ETagTooLong);
-    let party_id = object::id(self);
+    let party_id = object::id(self).to_address();
+    let admin_cap_id = object::id(cap).to_address();
+    let tag_bytes = *tag.as_bytes();
     set::add(self.uid_mut(cap), TagsKey(), tag, MAX_TAGS);
-    emit(TagAddedEvent { party_id, tag });
+    let tag_count_after = set::keys<TagsKey, String>(self.uid(), TagsKey()).length();
+    let tag_count_before = tag_count_after - 1;
+    emit(TagAddedEvent {
+        party_id,
+        admin_cap_id,
+        tag: tag_bytes,
+        tag_count_before,
+        tag_count_after,
+    });
 }
 
 /// Removes a tag from the party. Aborts in `typed_set` if not present. The
 /// whole field is dropped when the last tag leaves, so `has_tags` tracks
 /// "carries tags", not "has ever tagged".
 public fun remove_tag(self: &mut Party, cap: &PartyAdminCap, tag: String) {
-    let party_id = object::id(self);
+    let party_id = object::id(self).to_address();
+    let admin_cap_id = object::id(cap).to_address();
+    let tag_bytes = *tag.as_bytes();
     set::remove(self.uid_mut(cap), TagsKey(), tag);
-    emit(TagRemovedEvent { party_id, tag });
+    let tag_count_after = set::keys<TagsKey, String>(self.uid(), TagsKey()).length();
+    let tag_count_before = tag_count_after + 1;
+    emit(TagRemovedEvent {
+        party_id,
+        admin_cap_id,
+        tag: tag_bytes,
+        tag_count_before,
+        tag_count_after,
+    });
 }
 
 /// Removes the party's entire tag set. No-op if none is set.
 public fun clear_tags(self: &mut Party, cap: &PartyAdminCap) {
-    let party_id = object::id(self);
+    let party_id = object::id(self).to_address();
+    let admin_cap_id = object::id(cap).to_address();
     let uid = self.uid_mut(cap);
     if (set::exists(uid, TagsKey())) {
+        let tags = set::keys<TagsKey, String>(uid, TagsKey());
+        let tag_count_before = tags.length();
+        let mut removed_tags = vector[];
+        tags.do_ref!(|tag: &String| removed_tags.push_back(*tag.as_bytes()));
         set::clear<TagsKey, String>(uid, TagsKey());
-        emit(TagsClearedEvent { party_id });
+        let tag_count_after = set::keys<TagsKey, String>(uid, TagsKey()).length();
+        emit(TagsClearedEvent {
+            party_id,
+            admin_cap_id,
+            removed_tags,
+            tag_count_before,
+            tag_count_after,
+        });
     }
 }
 
@@ -104,4 +148,72 @@ public fun has_tag(self: &Party, tag: String): bool {
 /// The party's tags.
 public fun tags(self: &Party): vector<String> {
     set::keys(self.uid(), TagsKey())
+}
+
+// === Test accessors ===
+
+/// Test-only accessor for every `TagAddedEvent` field, in declaration order.
+#[test_only]
+public fun added_event_fields(
+    event: &TagAddedEvent,
+): (address, address, vector<u8>, u64, u64) {
+    (
+        event.party_id,
+        event.admin_cap_id,
+        event.tag,
+        event.tag_count_before,
+        event.tag_count_after,
+    )
+}
+
+/// Test-only descriptive alias for `added_event_fields`.
+#[test_only]
+public fun tag_added_event_fields(
+    event: &TagAddedEvent,
+): (address, address, vector<u8>, u64, u64) {
+    added_event_fields(event)
+}
+
+/// Test-only accessor for every `TagRemovedEvent` field, in declaration order.
+#[test_only]
+public fun removed_event_fields(
+    event: &TagRemovedEvent,
+): (address, address, vector<u8>, u64, u64) {
+    (
+        event.party_id,
+        event.admin_cap_id,
+        event.tag,
+        event.tag_count_before,
+        event.tag_count_after,
+    )
+}
+
+/// Test-only descriptive alias for `removed_event_fields`.
+#[test_only]
+public fun tag_removed_event_fields(
+    event: &TagRemovedEvent,
+): (address, address, vector<u8>, u64, u64) {
+    removed_event_fields(event)
+}
+
+/// Test-only accessor for every `TagsClearedEvent` field, in declaration order.
+#[test_only]
+public fun cleared_event_fields(
+    event: &TagsClearedEvent,
+): (address, address, vector<vector<u8>>, u64, u64) {
+    (
+        event.party_id,
+        event.admin_cap_id,
+        event.removed_tags,
+        event.tag_count_before,
+        event.tag_count_after,
+    )
+}
+
+/// Test-only descriptive alias for `cleared_event_fields`.
+#[test_only]
+public fun tags_cleared_event_fields(
+    event: &TagsClearedEvent,
+): (address, address, vector<vector<u8>>, u64, u64) {
+    cleared_event_fields(event)
 }

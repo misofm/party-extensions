@@ -5,7 +5,10 @@ streaming service, a social network, any site), stored as a dynamic field on
 any object's `UID`. Protocol-agnostic by design: it knows nothing about
 platforms or consumers, so anything in the ecosystem can depend on it.
 Consumers never re-implement link storage — they define a `Data` payload type
-and get one independent link field per platform, keyed by type.
+and get one independent link field per platform, keyed by type. Every mutation
+emits a typed, bounded change event: payloads are represented only by their
+canonical BCS length and Blake2b-256 digest, while the defining-ID-qualified
+data type is included as raw bytes.
 
 URLs are never stored: the client rebuilds the public URL from the `Data` it
 reads back, so a platform reshaping its URLs needs no on-chain change.
@@ -17,6 +20,9 @@ reads back, so a platform reshaping its URLs needs no on-chain change.
 - Value: `PlatformLink<Data> { data }` where `Data: copy + drop + store` is
   the platform's native identifier(s) — a handle, id, or subdomain.
 - Exactly one link per `Data` type per `UID`; `set` replaces in place.
+- `set` emits `PlatformLinkSetEvent<Data>` for inserts, replacements, and equal
+  replacements; `remove` and `clear` emit `PlatformLinkRemovedEvent<Data>` only
+  when a link was present. Events carry no full payload bytes.
 
 The module also owns the shared storage backstops so every payload package
 uses the same numbers:
@@ -42,17 +48,22 @@ consumer's concern (e.g. `party_platform_link` gates with `PartyAdminCap`).
 
 | Function | Description | Aborts |
 |---|---|---|
-| `set<Data>(&mut uid, link)` | Store, replacing any existing link | — |
-| `clear<Data>(&mut uid)` | Remove if present | — (no-op when absent) |
-| `remove<Data>(&mut uid)` | Remove and return the link | `ENoLink` (0) when absent |
+| `set<Data>(&mut uid, link)` | Store, replacing any existing link; emits a bounded set event | — |
+| `clear<Data>(&mut uid)` | Remove if present and emit a bounded removed event | — (no-op when absent) |
+| `remove<Data>(&mut uid)` | Remove and return the link; emits a bounded removed event | `ENoLink` (0) when absent |
 | `exists_<Data>(&uid)` | Whether a link is stored | — |
 | `get<Data>(&uid)` | `Option<PlatformLink<Data>>` | — |
 | `borrow<Data>(&uid)` | `&PlatformLink<Data>` | `ENoLink` (0) when absent |
 
 ## Events
 
-None — this primitive is storage only. Consumers emit their own typed events
-(`party_platform_link` emits phantom-typed per platform).
+| Event | When | Payload |
+|---|---|---|
+| `PlatformLinkSetEvent<Data>` | `set`, including equal replacement | `parent_id`, raw defining-ID-qualified `data_type`, existence transition, and previous/new `Data` BCS length plus Blake2b-256 hash |
+| `PlatformLinkRemovedEvent<Data>` | present `remove` or `clear` | `parent_id`, raw defining-ID-qualified `data_type`, `true`/`false` existence transition, and removed `Data` BCS length plus Blake2b-256 hash |
+
+Absent `clear` is silent. The event's `data_type` is not BCS-wrapped; it is the
+raw bytes of `type_name::with_defining_ids<Data>().into_string()`.
 
 ## Errors
 
@@ -78,3 +89,6 @@ or floating dependencies.
   rendering.
 - `PlatformLinkKey<Data>` types are namespaced by the defining package, so
   identically-named payloads in different packages never collide.
+- Index events by their phantom-typed event streams. Re-read the dynamic field
+  when the full payload is needed; event summaries are bounded integrity
+  signals, not a copy of `Data`.

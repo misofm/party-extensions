@@ -15,20 +15,23 @@ Release-ready. No security or correctness findings remain.
 replace-whole `vector<Cta>` dynamic field on a Party. Labels are 1–60 bytes,
 URLs are 1–2000 bytes, and the list is capped at 20. `set_ctas` and
 `clear_ctas` require the matching `PartyAdminCap`; views are permissionless.
-The module emits change events and contains no funds or automation entrypoints.
+Set and clear events include primitive party/capability addresses plus complete
+ordered prior/resulting CTA bytes, and an absent clear is silent. The module
+contains no funds or automation entrypoints.
 
 ## Exact manifest pins
 
 | Dependency | Repository | Revision |
 |---|---|---|
-| `partyos` | `https://github.com/misofm/partyos.git` | `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` |
+| `partyos` | `https://github.com/misofm/partyos.git` | `841a875a4989082a0ebeb1beb464b71f9ea2bd73` |
 
 The manifest has no local-path or floating dependencies.
 
 ## Verification
 
-- Package tests: **8/8**, including **6** expected-failure paths covering all
-  four CTA validators, list capacity, and wrong-cap authorization.
+- Package tests: **16/16**, including expected-failure paths covering all four
+  CTA validators, list capacity ordering, and wrong-cap set/replace/clear
+  authorization.
 - Production instruction coverage: **100.00%**.
 - End-to-end scenario: Party creation and share, cap transfer, later cap-gated
   write to the shared Party, and permissionless read in another transaction.

@@ -58,10 +58,14 @@ with `EUnauthorized` at `partyos::party`.
 
 ## Events
 
+Events carry primitive addresses and raw UTF-8 bytes, preserving list order and
+duplicates. They are emitted once per successful state mutation; an absent
+clear is silent.
+
 | Event | When | Payload |
 |---|---|---|
-| `CtasSetEvent` | `set_ctas` writes the list (set or replace) | `party_id`, `count` (list length) |
-| `CtasClearedEvent` | `clear_ctas` removes an existing list — not emitted on a no-op clear | `party_id` |
+| `CtasSetEvent` | `set_ctas` writes the list (set, replace, empty, or identical) | `party_id`, `admin_cap_id`, `existed_before`, `previous_count`, `count`, complete `previous_labels`/`previous_urls`, and complete resulting `labels`/`urls` |
+| `CtasClearedEvent` | `clear_ctas` removes an existing list — not emitted on a no-op clear | `party_id`, `admin_cap_id`, `previous_count`, and complete removed `previous_labels`/`previous_urls` |
 
 ## Errors
 
@@ -79,7 +83,7 @@ A wrong `PartyAdminCap` aborts with `EUnauthorized` (0) at
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at exact revision
-  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — the `Party` /
+  `841a875a4989082a0ebeb1beb464b71f9ea2bd73` — the `Party` /
   `PartyAdminCap` authorization core.
 - Nothing else beyond the Sui framework (`sui::dynamic_field`, `sui::event`,
   `std::string`) — no primitive or protocol dependencies, by design. The
@@ -95,9 +99,13 @@ A wrong `PartyAdminCap` aborts with `EUnauthorized` (0) at
 - **Order is the payload.** Render in stored order; do not re-sort. There are
   no per-entry ids, so entry identity does not survive a rewrite — diff by
   position, not by id.
-- **Re-read on event.** Events carry `party_id` (plus `count` on set), not the
-  list — an indexer re-reads `ctas`.
+- **Event payloads are self-contained.** Set and clear events carry complete
+  ordered byte snapshots, so an indexer can reconcile the mutation without a
+  dynamic-field read. `party_id` and `admin_cap_id` are primitive addresses.
 - **Empty vs. absent.** `set_ctas` with an empty vector stores an empty list
-  (`CtasSetEvent` with `count = 0`); `clear_ctas` removes the field. `ctas()`
-  returns an empty vector in both cases — treat both as "no CTAs", and use
-  `has_ctas` only if the distinction matters to you.
+  (`CtasSetEvent` with `existed_before = false` and `count = 0` on first set);
+  replacing that stored empty list reports `existed_before = true`;
+  `clear_ctas` removes the field and reports the removed count (including
+  zero). `ctas()` returns an empty vector in both absent and stored-empty
+  states — use `has_ctas` or event `existed_before` when the distinction
+  matters.

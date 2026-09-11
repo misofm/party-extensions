@@ -7,7 +7,9 @@ one blob each, which matters when the platform sponsors storage. Only the
 quilt's blob id is held on-chain, as a dynamic field on the party's `UID`,
 gated by the `PartyAdminCap`; views are permissionless. The chain is
 deliberately role-agnostic: which patch is the avatar vs the header is a
-client convention, derived off-chain — never stored here.
+client convention, derived off-chain — never stored here. Every successful
+mutation emits a complete, fixed-size event snapshot; an absent clear is
+silent.
 
 ## What it stores
 
@@ -15,8 +17,8 @@ client convention, derived off-chain — never stored here.
 - Value: `Media { quilt: u256 }` — the Walrus quilt blob id holding all of
   the party's images. Individual images are quilt patches addressed by
   identifier ("avatar", "header", …); those roles are not stored.
-- `set_media` replaces the id in place; `clear_media` removes the field
-  entirely and is a no-op when none is set.
+- `set_media` replaces the id in place, including an identical replacement;
+  `clear_media` removes the field entirely and is a no-op when none is set.
 
 ## API
 
@@ -27,8 +29,8 @@ with `EUnauthorized` (0) at `partyos::party`.
 
 | Function | Description | Aborts |
 |---|---|---|
-| `set_media(party, cap, quilt)` | Set or replace the party's media quilt; emits `MediaSetEvent` | `EZeroQuilt` (0) on a zero quilt id |
-| `clear_media(party, cap)` | Remove the party's media; emits `MediaClearedEvent` — no-op (and silent) when unset | — |
+| `set_media(party, cap, quilt)` | Set or replace the party's media quilt; emits one complete `MediaSetEvent` | `EZeroQuilt` (0) on a zero quilt id; wrong cap at `partyos::party` |
+| `clear_media(party, cap)` | Remove the party's media and emit its prior quilt — no-op (and silent) when unset | wrong cap at `partyos::party` |
 
 ### Views
 
@@ -41,19 +43,20 @@ with `EUnauthorized` (0) at `partyos::party`.
 
 | Event | When | Payload |
 |---|---|---|
-| `MediaSetEvent` | Quilt set or replaced | `party_id`, `quilt` — the new id rides in the event (a small, stable pointer) so an indexer can skip re-reading the field |
-| `MediaClearedEvent` | Media removed | `party_id` |
+| `MediaSetEvent` | Quilt set or replaced, including an equal replacement | `party_id`, `admin_cap_id`, `existed_before`, `previous_quilt`, `quilt`; the serialized payload is 129 bytes, and `previous_quilt` is zero only when `existed_before` is false |
+| `MediaClearedEvent` | Existing media removed; never on an absent clear | `party_id`, `admin_cap_id`, `previous_quilt`; the serialized payload is 96 bytes |
 
 ## Errors
 
 | Code | Constant | Condition |
 |---|---|---|
 | 0 | `EZeroQuilt` | `set_media` called with a zero quilt id — zero is never a real Walrus blob id and is indistinguishable from "unset" downstream |
+| 0 | `EUnauthorized` | `partyos::party`: any write uses a cap for a different party; authorization occurs before dynamic-field existence checks |
 
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at exact revision
-  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — the `Party` /
+  `841a875a4989082a0ebeb1beb464b71f9ea2bd73` — the `Party` /
   `PartyAdminCap` authorization core.
 - Otherwise only the Sui framework (`sui::dynamic_field`, `sui::event`). The
   manifest has no local-path or floating dependencies.
@@ -70,7 +73,10 @@ with `EUnauthorized` (0) at `partyos::party`.
 - **One quilt, not one blob per image.** A single storage reservation is
   markedly cheaper than one blob each, which matters when the platform
   sponsors storage.
-- Indexers can take the new quilt id straight from `MediaSetEvent` instead
-  of re-reading the field (dynamic-field mutations are not otherwise
-  observable); `MediaClearedEvent` means the field is gone. A no-op
-  `clear_media` emits nothing.
+- Indexers can reconcile a write from `MediaSetEvent` alone: `existed_before`
+  distinguishes insert from replacement, and the event carries both quilt
+  ids plus the authorizing cap address. On an insert, `previous_quilt` is a
+  zero sentinel; zero is rejected as a new quilt id.
+- `MediaClearedEvent` means the field is gone and carries the exact removed
+  quilt id. A no-op `clear_media` emits nothing, but still authorizes first,
+  so a wrong cap aborts even when no media is stored.

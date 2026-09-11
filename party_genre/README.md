@@ -47,9 +47,9 @@ All writes require `&PartyAdminCap` for the exact party and go through
 
 | Event | When | Payload |
 |---|---|---|
-| `GenreAddedEvent` | A genre is tagged (`add_genre`) | `party_id`, `genre_id` |
-| `GenreRemovedEvent` | A genre is removed (`remove_genre`) | `party_id`, `genre_id` |
-| `GenresClearedEvent` | The whole set is removed (`clear_genres` on an existing set) | `party_id` |
+| `GenreAddedEvent` | A genre is tagged (`add_genre`) | `party_id`, `admin_cap_id`, `genre_id`, `genre_name`, ordered `genre_ids_before`, ordered `genre_ids_after`, `max_genres` |
+| `GenreRemovedEvent` | A genre is removed (`remove_genre`) | `party_id`, `admin_cap_id`, `genre_id`, ordered `genre_ids_before`, ordered `genre_ids_after` |
+| `GenresClearedEvent` | The whole set is removed (`clear_genres` on an existing set) | `party_id`, `admin_cap_id`, ordered `genre_ids_before`, ordered `genre_ids_after` |
 
 ## Errors
 
@@ -89,8 +89,9 @@ All are exact Git pins; this manifest has no local-path dependencies.
   `release_genre` tags releases with, so party genres join cleanly against
   release metadata.
 - **Events are change signals.** Re-read `genres()` on any of the three
-  events; `genre_id` rides in added/removed events as a small stable pointer,
-  but the payload is not the state.
+  events; the ordered before/after address snapshots are bounded reconciliation
+  hints, while `genre_id` and `genre_name` in `GenreAddedEvent` are small stable
+  pointers/display data. The snapshots are not a substitute for current state.
 - **No ranking.** `genres()` returns insertion order (a `typed_set`
   guarantee); any notion of a "primary genre" — e.g. first element — is a
   client convention, not protocol state.

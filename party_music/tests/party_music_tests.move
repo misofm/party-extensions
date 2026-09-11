@@ -6,21 +6,26 @@ module party_music::party_music_tests;
 
 use party_music::party_music as music;
 use std::unit_test::assert_eq;
+use sui::event;
 
 #[test]
 fun added_platform_constructors() {
+    let events_before = event::num_events();
     assert_eq!(music::deezer(b"1".to_string()).data().artist_id(), b"1".to_string());
     assert_eq!(music::tidal(b"2".to_string()).data().artist_id(), b"2".to_string());
     assert_eq!(music::amazon_music(b"3".to_string()).data().artist_id(), b"3".to_string());
     assert_eq!(music::audiomack(b"miso".to_string()).data().username(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
 }
 
 #[test]
 fun constructors_wrap_ids() {
+    let events_before = event::num_events();
     assert_eq!(music::spotify(b"1abc".to_string()).data().artist_id(), b"1abc".to_string());
     assert_eq!(music::bandcamp(b"miso".to_string()).data().subdomain(), b"miso".to_string());
     assert_eq!(music::soundcloud(b"miso".to_string()).data().username(), b"miso".to_string());
     assert_eq!(music::apple_music(b"12345".to_string()).data().artist_id(), b"12345".to_string());
+    assert_eq!(event::num_events(), events_before);
 }
 
 #[test, expected_failure(abort_code = 0, location = party_music::party_music)] // EEmptyId

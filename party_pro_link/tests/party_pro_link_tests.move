@@ -6,6 +6,7 @@ module party_pro_link::party_pro_link_tests;
 
 use party_pro_link::party_pro_link as pro;
 use std::unit_test::assert_eq;
+use sui::event;
 
 #[test]
 fun url_based_constructors() {
@@ -15,6 +16,7 @@ fun url_based_constructors() {
     assert_eq!(pro::publisher_page(b"https://publisher.example".to_string()).data().url(), b"https://publisher.example".to_string());
     assert_eq!(pro::epk(b"https://epk.example".to_string()).data().url(), b"https://epk.example".to_string());
     assert_eq!(pro::label_page(b"https://label.example".to_string()).data().url(), b"https://label.example".to_string());
+    assert_eq!(event::num_events(), 0);
 }
 
 #[test]
@@ -22,6 +24,7 @@ fun handle_based_constructors() {
     assert_eq!(pro::patreon(b"miso".to_string()).data().handle(), b"miso".to_string());
     assert_eq!(pro::substack(b"miso".to_string()).data().subdomain(), b"miso".to_string());
     assert_eq!(pro::kofi(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), 0);
 }
 
 #[test, expected_failure(abort_code = 0, location = party_pro_link::party_pro_link)] // EEmptyValue

@@ -328,6 +328,10 @@ fun multibyte_sixty_byte_name_is_bounded_and_event_is_142_bytes() {
 
 #[test]
 fun constructors_and_views_are_silent() {
+    let ctx = &mut tx_context::dummy();
+    let (p, cap) = new_party(ctx);
+    let before = event::num_events();
+
     let artist = roles::artist();
     let producer = roles::producer();
     let dj = roles::dj();
@@ -346,12 +350,10 @@ fun constructors_and_views_are_silent() {
     assert_eq!(label.name(), b"Label".to_string());
     assert_eq!(collective.name(), b"Collective".to_string());
     assert_eq!(custom.name(), b"Custom".to_string());
+    assert_eq!(event::num_events(), before);
 
-    let ctx = &mut tx_context::dummy();
-    let (p, cap) = new_party(ctx);
-    let before = event::num_events();
     assert!(!roles::has_roles(&p));
-    assert!(!roles::has_role(&p, roles::artist()));
+    assert!(!roles::has_role(&p, artist));
     assert!(roles::roles(&p).is_empty());
     assert_eq!(event::num_events(), before);
     destroy(p);

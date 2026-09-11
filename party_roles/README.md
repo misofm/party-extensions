@@ -100,7 +100,8 @@ Both are exact Git pins; this manifest has no local-path dependencies.
   and sanitize before rendering.
 - Equality is on the whole enum value: `Custom("Artist")` does not collide
   with `Artist`, and the two can be held at once.
-- Add and remove events carry the canonical role name, so an indexer can track
-  them without re-reading; `RolesClearedEvent` carries only `party_id`, so
-  drop or re-read local state on clear.
+- Add and remove events carry the stable kind/name pair, `party_id`,
+  `admin_cap_id`, and before/after counts, so an indexer can track them
+  without re-reading. `RolesClearedEvent` carries paired ordered kind/name
+  snapshots plus counts ending at zero, so no re-read is needed on clear.
 - `roles()` returns roles in insertion order.

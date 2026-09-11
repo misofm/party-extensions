@@ -9,12 +9,12 @@ generic over the payload; the payload types live in their own small packages
 new type there, never a change here — and adding one never rewrites another's.
 
 Storage mechanics come entirely from `platform_link`; this module adds only
-the two things that are party-specific. Writes are gated by the `PartyAdminCap`
-through `party::uid_mut(cap)`; views are permissionless. And every write emits
-a phantom-typed event, because dynamic-field mutations are not otherwise
-observable: the event's phantom `Data` type tells an indexer *which* platform
-changed, and the indexer re-reads the field — events carry no payload by
-convention, only `party_id`.
+the party-specific cap gate and views. Writes are gated by the
+`PartyAdminCap` through `party::uid_mut(cap)`; views are permissionless. The
+primitive emits the authoritative rich event for each successful set or
+present clear, including the parent address, defining-ID-qualified `Data` type,
+existence transition, and bounded BCS summaries. The legacy wrapper event types
+remain public for compatibility but are inert and never emitted.
 
 ## What it stores
 
@@ -42,8 +42,8 @@ with `EUnauthorized` at `partyos::party`.
 
 | Function | Description | Aborts |
 |---|---|---|
-| `set_link<Data>(party, cap, PlatformLink<Data>)` | Store the link, replacing any existing one for that platform; emits `LinkSetEvent<Data>` | wrong cap |
-| `clear_link<Data>(party, cap)` | Remove the platform's link; emits `LinkClearedEvent<Data>` only when one was stored, no-op otherwise | wrong cap — the cap is verified before the existence check, so a wrong cap aborts even when nothing is stored |
+| `set_link<Data>(party, cap, PlatformLink<Data>)` | Store the link, replacing any existing one for that platform; delegates to `platform_link::set`, which emits one `PlatformLinkSetEvent<Data>` | wrong cap |
+| `clear_link<Data>(party, cap)` | Remove the platform's link; delegates to `platform_link::clear`, which emits `PlatformLinkRemovedEvent<Data>` only when one was stored, and is silent otherwise | wrong cap — the cap is verified before the existence check, so a wrong cap aborts even when nothing is stored |
 
 ### Views
 
@@ -56,13 +56,14 @@ with `EUnauthorized` at `partyos::party`.
 
 | Event | When | Payload |
 |---|---|---|
-| `LinkSetEvent<phantom Data>` | `set_link` — a link is set or replaced | `party_id` only |
-| `LinkClearedEvent<phantom Data>` | `clear_link` removed a stored link (never on the absent no-op) | `party_id` only |
+| `PlatformLinkSetEvent<phantom Data>` | Every successful `set_link`, including equal replacement; emitted by `platform_link` | `parent_id`, raw defining-ID-qualified `data_type`, existence transition, previous/new `Data` BCS lengths and Blake2b-256 hashes |
+| `PlatformLinkRemovedEvent<phantom Data>` | Every successful present `clear_link`; emitted by `platform_link` | `parent_id`, raw defining-ID-qualified `data_type`, `true`/`false` existence transition, removed `Data` BCS length and Blake2b-256 hash |
+| `LinkSetEvent<phantom Data>` | Legacy compatibility declaration | none — inert; never emitted |
+| `LinkClearedEvent<phantom Data>` | Legacy compatibility declaration | none — inert; never emitted |
 
-The phantom `Data` type parameter is the signal: it names the platform that
-changed. By convention no stored data rides in the event — the indexer
-re-reads the field. (Small, stable pointers are the documented exception
-elsewhere: `party_media`'s quilt id or a role or tag string.)
+The phantom `Data` type parameter identifies the platform that changed. The
+primitive hashes and length-bounds payload summaries rather than putting
+unbounded payload bytes in events; clients should re-read with `link<Data>`.
 
 ## Errors
 
@@ -79,7 +80,7 @@ payload packages, before `set_link` is ever called.
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at exact revision
-  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — `Party` authorization. This
+  `841a875a4989082a0ebeb1beb464b71f9ea2bd73` — `Party` authorization. This
   is the manifest's only Git pin.
 - [`platform_link`](../lib/platform_link) — a local-path sibling package
   (`platform_link = { local = "../lib/platform_link" }`) — all storage
@@ -94,10 +95,10 @@ are local-path dependencies.
 
 ## Integrator notes
 
-- **Subscribe per platform.** Filter events by the phantom `Data` type to know
-  which platform changed, then re-read with `link<Data>` — the event is a
-  change signal, not a payload. `LinkClearedEvent` is emitted only when a link
-  was actually removed.
+- **Subscribe per platform.** Filter the primitive events by the phantom
+  `Data` type to know which platform changed, then re-read with `link<Data>`.
+  `PlatformLinkRemovedEvent` appears only when a link was actually removed;
+  absent and repeated clears are silent.
 - **URLs are rebuilt, never stored.** The payload carries a handle, id, or
   subdomain; the client constructs the public URL (e.g. `x.com/{handle}`), so
   a platform reshaping its URLs needs no on-chain change.

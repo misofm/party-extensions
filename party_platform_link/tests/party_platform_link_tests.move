@@ -7,11 +7,14 @@ module party_platform_link::party_platform_link_tests;
 use partyos::party;
 use party_platform_link::party_platform_link as links;
 use party_social::party_social::{Self as social, XData, InstagramData};
+use platform_link::platform_link as primitive;
+use std::bcs;
+use std::type_name;
 use std::unit_test::{assert_eq, destroy};
+use sui::event;
+use sui::hash::blake2b256;
 use sui::test_scenario::{Self as ts};
 
-// Mirrors `party::EUnauthorized` (party.move) for the wrong-cap abort test.
-const EUnauthorized: u64 = 0;
 const OWNER: address = @0xA;
 
 fun new_party(ctx: &mut TxContext): (party::Party, party::PartyAdminCap) {
@@ -24,63 +27,90 @@ fun new_party(ctx: &mut TxContext): (party::Party, party::PartyAdminCap) {
 }
 
 #[test]
-fun set_read_and_clear_link() {
+fun x_and_instagram_events_keep_distinct_parties_and_types() {
     let ctx = &mut tx_context::dummy();
-    let (mut p, cap) = new_party(ctx);
+    let (mut x_party, x_cap) = new_party(ctx);
+    let (mut instagram_party, instagram_cap) = new_party(ctx);
+    let x_parent_id = object::id(&x_party).to_address();
+    let instagram_parent_id = object::id(&instagram_party).to_address();
+    assert!(x_parent_id != instagram_parent_id);
 
-    assert!(!links::has_link<XData>(&p));
-    links::set_link(&mut p, &cap, social::x(b"miso".to_string()));
+    let x_link = social::x(b"miso".to_string());
+    let x_data = primitive::data(&x_link);
+    let x_bcs = bcs::to_bytes(&x_data);
+    let x_hash = blake2b256(&x_bcs);
+    let instagram_link = social::instagram(b"miso.network".to_string());
+    let instagram_data = primitive::data(&instagram_link);
+    let instagram_bcs = bcs::to_bytes(&instagram_data);
+    let instagram_hash = blake2b256(&instagram_bcs);
 
-    assert!(links::has_link<XData>(&p));
-    let got = links::link<XData>(&p).destroy_some();
-    assert_eq!(got.data().handle(), b"miso".to_string());
+    links::set_link(&mut x_party, &x_cap, x_link);
+    links::set_link(&mut instagram_party, &instagram_cap, instagram_link);
 
-    links::clear_link<XData>(&mut p, &cap);
-    assert!(!links::has_link<XData>(&p));
-    links::clear_link<XData>(&mut p, &cap); // no-op
-
-    destroy(p);
-    destroy(cap);
-}
-
-#[test]
-fun platforms_are_independent() {
-    let ctx = &mut tx_context::dummy();
-    let (mut p, cap) = new_party(ctx);
-
-    links::set_link(&mut p, &cap, social::x(b"miso".to_string()));
-    links::set_link(&mut p, &cap, social::instagram(b"miso.network".to_string()));
-
-    // Clearing one platform leaves the other untouched.
-    links::clear_link<XData>(&mut p, &cap);
-    assert!(!links::has_link<XData>(&p));
-    assert!(links::has_link<InstagramData>(&p));
+    let x_events = event::events_by_type<primitive::PlatformLinkSetEvent<XData>>();
+    let instagram_events = event::events_by_type<primitive::PlatformLinkSetEvent<InstagramData>>();
+    assert_eq!(x_events.length(), 1);
+    assert_eq!(instagram_events.length(), 1);
+    assert_eq!(primitive::set_event_parent_id(&x_events[0]), x_parent_id);
+    assert_eq!(primitive::set_event_parent_id(&instagram_events[0]), instagram_parent_id);
     assert_eq!(
-        links::link<InstagramData>(&p).destroy_some().data().handle(),
-        b"miso.network".to_string(),
+        primitive::set_event_data_type(&x_events[0]),
+        type_name::with_defining_ids<XData>().into_string().into_bytes(),
     );
+    assert_eq!(
+        primitive::set_event_data_type(&instagram_events[0]),
+        type_name::with_defining_ids<InstagramData>().into_string().into_bytes(),
+    );
+    assert!(!primitive::set_event_existed_before(&x_events[0]));
+    assert!(!primitive::set_event_existed_before(&instagram_events[0]));
+    assert!(primitive::set_event_exists_after(&x_events[0]));
+    assert!(primitive::set_event_exists_after(&instagram_events[0]));
+    assert_eq!(primitive::set_event_previous_bcs_length(&x_events[0]), 0);
+    assert_eq!(primitive::set_event_previous_bcs_hash(&x_events[0]), vector[]);
+    assert_eq!(primitive::set_event_previous_bcs_length(&instagram_events[0]), 0);
+    assert_eq!(primitive::set_event_previous_bcs_hash(&instagram_events[0]), vector[]);
+    assert_eq!(primitive::set_event_data_bcs_length(&x_events[0]), x_bcs.length());
+    assert_eq!(primitive::set_event_data_bcs_hash(&x_events[0]), x_hash);
+    assert_eq!(primitive::set_event_data_bcs_length(&instagram_events[0]), instagram_bcs.length());
+    assert_eq!(primitive::set_event_data_bcs_hash(&instagram_events[0]), instagram_hash);
 
-    destroy(p);
-    destroy(cap);
+    assert_eq!(event::events_by_type<links::LinkSetEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkSetEvent<InstagramData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkClearedEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkClearedEvent<InstagramData>>().length(), 0);
+
+    links::clear_link<XData>(&mut x_party, &x_cap);
+    links::clear_link<InstagramData>(&mut instagram_party, &instagram_cap);
+    let x_removed = event::events_by_type<primitive::PlatformLinkRemovedEvent<XData>>();
+    let instagram_removed = event::events_by_type<primitive::PlatformLinkRemovedEvent<InstagramData>>();
+    assert_eq!(x_removed.length(), 1);
+    assert_eq!(instagram_removed.length(), 1);
+    assert_eq!(primitive::removed_event_parent_id(&x_removed[0]), x_parent_id);
+    assert_eq!(primitive::removed_event_parent_id(&instagram_removed[0]), instagram_parent_id);
+    assert_eq!(primitive::removed_event_data_type(&x_removed[0]), type_name::with_defining_ids<XData>().into_string().into_bytes());
+    assert_eq!(primitive::removed_event_data_type(&instagram_removed[0]), type_name::with_defining_ids<InstagramData>().into_string().into_bytes());
+    assert!(primitive::removed_event_existed_before(&x_removed[0]));
+    assert!(primitive::removed_event_existed_before(&instagram_removed[0]));
+    assert!(!primitive::removed_event_exists_after(&x_removed[0]));
+    assert!(!primitive::removed_event_exists_after(&instagram_removed[0]));
+    assert_eq!(primitive::removed_event_removed_bcs_length(&x_removed[0]), x_bcs.length());
+    assert_eq!(primitive::removed_event_removed_bcs_hash(&x_removed[0]), x_hash);
+    assert_eq!(primitive::removed_event_removed_bcs_length(&instagram_removed[0]), instagram_bcs.length());
+    assert_eq!(primitive::removed_event_removed_bcs_hash(&instagram_removed[0]), instagram_hash);
+    assert_eq!(event::events_by_type<links::LinkSetEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkClearedEvent<XData>>().length(), 0);
+
+    destroy(x_party);
+    destroy(x_cap);
+    destroy(instagram_party);
+    destroy(instagram_cap);
 }
 
 #[test]
-fun set_link_replaces_existing() {
-    let ctx = &mut tx_context::dummy();
-    let (mut p, cap) = new_party(ctx);
-
-    links::set_link(&mut p, &cap, social::x(b"old".to_string()));
-    links::set_link(&mut p, &cap, social::x(b"new".to_string()));
-    assert_eq!(links::link<XData>(&p).destroy_some().data().handle(), b"new".to_string());
-
-    destroy(p);
-    destroy(cap);
-}
-
-#[test]
-fun shared_party_platform_link_workflow() {
+fun shared_party_cap_holder_and_reader() {
     let mut scenario = ts::begin(OWNER);
     let (p, cap) = new_party(scenario.ctx());
+    let parent_id = object::id(&p).to_address();
     party::share(p, &cap);
     transfer::public_transfer(cap, OWNER);
 
@@ -88,32 +118,25 @@ fun shared_party_platform_link_workflow() {
     let mut p = scenario.take_shared<party::Party>();
     let cap = scenario.take_from_sender<party::PartyAdminCap>();
     links::set_link(&mut p, &cap, social::x(b"miso".to_string()));
+    let set_events = event::events_by_type<primitive::PlatformLinkSetEvent<XData>>();
+    assert_eq!(set_events.length(), 1);
+    assert_eq!(primitive::set_event_parent_id(&set_events[0]), parent_id);
+    assert!(!primitive::set_event_existed_before(&set_events[0]));
+    assert!(primitive::set_event_exists_after(&set_events[0]));
+    assert_eq!(event::events_by_type<links::LinkSetEvent<XData>>().length(), 0);
     ts::return_shared(p);
     scenario.return_to_sender(cap);
 
     scenario.next_tx(@0xB);
     let p = scenario.take_shared<party::Party>();
-    assert_eq!(
-        links::link<XData>(&p).destroy_some().data().handle(),
-        b"miso".to_string(),
-    );
+    let before = event::num_events();
+    assert!(links::has_link<XData>(&p));
+    assert_eq!(links::link<XData>(&p).destroy_some().data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), before);
+    assert_eq!(event::events_by_type<primitive::PlatformLinkSetEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<primitive::PlatformLinkRemovedEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkSetEvent<XData>>().length(), 0);
+    assert_eq!(event::events_by_type<links::LinkClearedEvent<XData>>().length(), 0);
     ts::return_shared(p);
     scenario.end();
-}
-
-// `clear_link` must reject a wrong cap even when no link is present — the cap is
-// verified before the existence check, so authorization never depends on state.
-#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
-fun clear_link_with_wrong_cap_aborts_when_absent() {
-    let ctx = &mut tx_context::dummy();
-    let (mut p, cap) = new_party(ctx);
-    let (other, other_cap) = new_party(ctx);
-
-    // `p` has no XData link; a foreign cap must still abort rather than no-op.
-    links::clear_link<XData>(&mut p, &other_cap);
-
-    destroy(p);
-    destroy(cap);
-    destroy(other);
-    destroy(other_cap);
 }

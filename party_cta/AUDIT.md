@@ -1,9 +1,9 @@
 # Release Audit — `party_cta`
 
 **Repository:** `https://github.com/misofm/partyos-extensions`
-**Audit target:** pending working-tree source on `main` (matches the repository's current `HEAD`)
-**Date:** 2026-09-02
-**Toolchain:** `sui 1.78.1-722ac4fcf484`
+**Audit target:** `party_cta` source at implementation commit `5567df3`
+**Date:** 2026-09-11
+**Toolchain:** `sui 1.79.0-46f18562f1f5`
 
 ## Verdict
 
@@ -29,15 +29,18 @@ The manifest has no local-path or floating dependencies.
 
 ## Verification
 
-- Package tests: **16/16**, including expected-failure paths covering all four
+- Verified Testnet package tests: **16/16**, including expected-failure paths covering all four
   CTA validators, list capacity ordering, and wrong-cap set/replace/clear
   authorization.
-- Production instruction coverage: **100.00%**.
+- Strict Testnet and Mainnet lint builds passed with warnings as errors.
+- Production instruction coverage: **255/255 instructions (100.00%)**.
 - End-to-end scenario: Party creation and share, cap transfer, later cap-gated
   write to the shared Party, and permissionless read in another transaction.
-- Repository aggregate: **77/77 tests on Testnet and 77/77 on Mainnet**, strict
-  lint with warnings as errors; all 11 production modules are at **100.00%**.
-- Fresh unpublished copies build strictly for both networks.
+- Historical repository aggregate (not this package review): **77/77 tests on
+  Testnet and 77/77 on Mainnet**, with all 11 production modules at
+  **100.00%**.
+- Historical fresh-unpublished-copy strict-build claim (not re-run for this
+  review): fresh copies built strictly for both networks.
 
 ## Published metadata
 

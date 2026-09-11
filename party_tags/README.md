@@ -26,8 +26,9 @@ the `PartyAdminCap` through `party::uid_mut(cap)`; views are permissionless.
 
 ## API
 
-All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` at `partyos::party`. Views are permissionless.
+All writes require the matching `PartyAdminCap`. `add_tag` validates empty and
+overlong tags before authorization; after those checks, a wrong cap aborts with
+`EUnauthorized` at `partyos::party`. Views are permissionless.
 
 ### Writes (cap-gated)
 

@@ -36,8 +36,9 @@ The manifest has no local-path or floating dependencies.
 - Production instruction coverage: **100.00%**.
 - End-to-end scenario covers Party share, cap transfer, later tag write, and
   permissionless read from the shared Party.
-- Repository aggregate: **77/77 tests on Testnet and 77/77 on Mainnet**, strict
-  lint with warnings as errors; all 11 production modules are at **100.00%**.
+- Strict Testnet and Mainnet builds passed with lint warnings as errors; package
+  tests passed 23/23 on each network; production instruction coverage was
+  100.00%.
 
 ## Published metadata
 

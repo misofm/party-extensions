@@ -38,6 +38,7 @@ fun set_sequence_replace_equal_max_clear_reinsert() {
     media::set_media(&mut p, &cap, 1u256);
     let set_events = event::events_by_type<media::MediaSetEvent>();
     assert_eq!(set_events.length(), 1);
+    assert_eq!(std::bcs::to_bytes(&set_events[0]).length(), 129);
     let (event_party_id, event_cap_id, existed_before, previous_quilt, quilt) =
         media::set_event_fields(&set_events[0]);
     assert_eq!(event_party_id, party_id);
@@ -79,6 +80,7 @@ fun set_sequence_replace_equal_max_clear_reinsert() {
     media::clear_media(&mut p, &cap);
     let cleared_events = event::events_by_type<media::MediaClearedEvent>();
     assert_eq!(cleared_events.length(), 1);
+    assert_eq!(std::bcs::to_bytes(&cleared_events[0]).length(), 96);
     let (event_party_id, event_cap_id, previous_quilt) =
         media::cleared_event_fields(&cleared_events[0]);
     assert_eq!(event_party_id, party_id);

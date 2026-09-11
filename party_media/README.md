@@ -22,8 +22,9 @@ silent.
 
 ## API
 
-All writes require `&PartyAdminCap` for the exact party; a wrong cap aborts
-with `EUnauthorized` (0) at `partyos::party`.
+`set_media` rejects a zero quilt before authorization. For a nonzero set, and
+for every `clear_media` call, the cap must match the exact party or the call
+aborts with `EUnauthorized` (0) at `partyos::party`.
 
 ### Writes (cap-gated)
 
@@ -51,7 +52,7 @@ with `EUnauthorized` (0) at `partyos::party`.
 | Code | Constant | Condition |
 |---|---|---|
 | 0 | `EZeroQuilt` | `set_media` called with a zero quilt id — zero is never a real Walrus blob id and is indistinguishable from "unset" downstream |
-| 0 | `EUnauthorized` | `partyos::party`: any write uses a cap for a different party; authorization occurs before dynamic-field existence checks |
+| 0 | `EUnauthorized` | `partyos::party`: a nonzero set or any clear uses a cap for a different party; authorization occurs before dynamic-field existence checks |
 
 ## Dependencies
 

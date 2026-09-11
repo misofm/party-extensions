@@ -37,9 +37,6 @@ The manifest has no local-path or floating dependencies.
 - End-to-end scenario covers Party share, cap transfer, later cap-gated media
   write, and permissionless read from the shared Party, with views confirmed
   event-silent.
-- Repository aggregate: **77/77 tests on Testnet and 77/77 on Mainnet**, strict
-  lint with warnings as errors; all 11 production modules are at **100.00%**.
-
 ## Published metadata
 
 The retained `Published.toml` is the sole record of the prior immutable Testnet package id;

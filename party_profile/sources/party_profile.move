@@ -11,7 +11,10 @@
 /// validated code primitives (`country_code`, `language_code`), so a stored value
 /// is always a real code. The party's `name` is NOT duplicated here — it lives on
 /// the core `Party` (`party::set_name`) — and the join date comes from the party's
-/// creation event (the indexer has it for free).
+/// creation event (the indexer has it for free). Every successful set emits a
+/// complete before/after byte snapshot and the authorizing cap address; a clear
+/// emits the complete removed snapshot only when a profile exists. All writes
+/// are cap-gated through `party::uid_mut`, and views are permissionless.
 module party_profile::party_profile;
 
 use country_code::country_code::CountryCode;
@@ -20,6 +23,7 @@ use partyos::party::{Party, PartyAdminCap};
 use std::string::String;
 use sui::dynamic_field as df;
 use sui::event::emit;
+use sui::object::UID;
 use sui::vec_set;
 
 // === Errors ===
@@ -71,21 +75,41 @@ public struct Profile has store, drop {
 
 // === Events ===
 
-/// Emitted when a party's profile is set or updated.
+/// Emitted when a party's profile is set or updated. The event carries the
+/// complete prior and resulting profile values as raw UTF-8 bytes so an
+/// indexer can reconcile a replacement without re-reading the dynamic field.
 public struct ProfileSetEvent has copy, drop {
-    party_id: ID,
+    party_id: address,
+    admin_cap_id: address,
+    had_profile: bool,
+    previous_bio_short: vector<u8>,
+    previous_bio_long: Option<vector<u8>>,
+    previous_country: Option<vector<u8>>,
+    previous_languages: vector<vector<u8>>,
+    bio_short: vector<u8>,
+    bio_long: Option<vector<u8>>,
+    country: Option<vector<u8>>,
+    languages: vector<vector<u8>>,
 }
 
-/// Emitted when a party's profile is cleared.
+/// Emitted when a party's profile is cleared. It carries the complete profile
+/// snapshot that was removed; no event is emitted when the field is absent.
 public struct ProfileClearedEvent has copy, drop {
-    party_id: ID,
+    party_id: address,
+    admin_cap_id: address,
+    previous_bio_short: vector<u8>,
+    previous_bio_long: Option<vector<u8>>,
+    previous_country: Option<vector<u8>>,
+    previous_languages: vector<vector<u8>>,
 }
 
 // === Write API ===
 
-/// Sets (creates or replaces) the party's whole profile. The single write
-/// entry point: a profile is a cohesive card, edited as a whole and saved in
-/// one call.
+/// Sets (creates or replaces) the party's whole profile. Validation and profile
+/// construction happen before authorization, preserving validation precedence;
+/// authorization happens before any dynamic-field snapshot or mutation. Every
+/// successful call, including an identical replacement, emits exactly one event
+/// containing complete prior and resulting raw-byte snapshots.
 public fun set_profile(
     self: &mut Party,
     cap: &PartyAdminCap,
@@ -101,24 +125,63 @@ public fun set_profile(
     });
     validate_languages(&languages);
 
-    let party_id = object::id(self);
+    let party_id = object::id(self).to_address();
+    let admin_cap_id = object::id(cap).to_address();
     let profile = Profile { bio_short, bio_long, country, languages };
     let uid = self.uid_mut(cap);
-    if (df::exists(uid, ProfileKey())) {
+
+    let had_profile = df::exists(uid, ProfileKey());
+    let (
+        previous_bio_short,
+        previous_bio_long,
+        previous_country,
+        previous_languages,
+    ) = previous_profile_bytes(uid, had_profile);
+    let (bio_short, bio_long, country, languages) = profile_bytes(&profile);
+
+    if (had_profile) {
         *df::borrow_mut(uid, ProfileKey()) = profile;
     } else {
         df::add(uid, ProfileKey(), profile);
     };
-    emit(ProfileSetEvent { party_id });
+    emit(ProfileSetEvent {
+        party_id,
+        admin_cap_id,
+        had_profile,
+        previous_bio_short,
+        previous_bio_long,
+        previous_country,
+        previous_languages,
+        bio_short,
+        bio_long,
+        country,
+        languages,
+    });
 }
 
-/// Removes the party's profile. No-op if none is set.
+/// Removes the party's profile. Authorization happens before checking
+/// existence; an absent field is a silent no-op, while an existing field is
+/// removed and emits exactly one complete snapshot event.
 public fun clear_profile(self: &mut Party, cap: &PartyAdminCap) {
-    let party_id = object::id(self);
+    let party_id = object::id(self).to_address();
+    let admin_cap_id = object::id(cap).to_address();
     let uid = self.uid_mut(cap);
     if (df::exists(uid, ProfileKey())) {
-        let Profile { .. } = df::remove(uid, ProfileKey());
-        emit(ProfileClearedEvent { party_id });
+        let previous = df::remove<ProfileKey, Profile>(uid, ProfileKey());
+        let (
+            previous_bio_short,
+            previous_bio_long,
+            previous_country,
+            previous_languages,
+        ) = profile_bytes(&previous);
+        emit(ProfileClearedEvent {
+            party_id,
+            admin_cap_id,
+            previous_bio_short,
+            previous_bio_long,
+            previous_country,
+            previous_languages,
+        });
     }
 }
 
@@ -140,7 +203,66 @@ public fun bio_long(self: &Profile): Option<String> { self.bio_long }
 public fun country(self: &Profile): Option<CountryCode> { self.country }
 public fun languages(self: &Profile): vector<LanguageCode> { self.languages }
 
-// === Private ===
+// === Private Functions ===
+
+/// Normalizes a profile into the primitive, ordered byte vectors used by rich
+/// events. This helper is pure: it does not access dynamic fields or emit.
+fun profile_bytes(
+    profile: &Profile,
+): (
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+) {
+    let bio_short = *profile.bio_short.as_bytes();
+    let bio_long = optional_string_bytes(&profile.bio_long);
+    let country = optional_country_bytes(&profile.country);
+    let languages = language_bytes(&profile.languages);
+    (bio_short, bio_long, country, languages)
+}
+
+/// Returns a byte snapshot of the existing profile, or initial absent
+/// sentinels when no dynamic field is attached.
+fun previous_profile_bytes(
+    uid: &UID,
+    had_profile: bool,
+): (
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+) {
+    if (!had_profile) return (vector[], option::none(), option::none(), vector[]);
+    profile_bytes(df::borrow<ProfileKey, Profile>(uid, ProfileKey()))
+}
+
+/// Copies an optional string to an optional raw byte vector.
+fun optional_string_bytes(value: &Option<String>): Option<vector<u8>> {
+    let mut result = option::none();
+    value.do_ref!(|value| result.fill(*value.as_bytes()));
+    result
+}
+
+/// Copies an optional validated country code to an optional raw byte vector.
+fun optional_country_bytes(value: &Option<CountryCode>): Option<vector<u8>> {
+    let mut result = option::none();
+    value.do_ref!(|value| {
+        let code = country_code::country_code::code(value);
+        result.fill(*code.as_bytes());
+    });
+    result
+}
+
+/// Copies validated language codes to raw byte vectors while preserving order.
+fun language_bytes(values: &vector<LanguageCode>): vector<vector<u8>> {
+    let mut result = vector[];
+    values.do_ref!(|value| {
+        let code = language_code::language_code::code(value);
+        result.push_back(*code.as_bytes());
+    });
+    result
+}
 
 fun validate_bio_short(bio_short: &String) {
     assert!(!bio_short.is_empty(), EEmptyBioShort);
@@ -156,4 +278,82 @@ fun validate_languages(languages: &vector<LanguageCode>) {
         assert!(!seen.contains(l), EDuplicateLanguage);
         seen.insert(*l);
     });
+}
+
+// === Test Functions ===
+
+/// Test-only accessor for every `ProfileSetEvent` field, in declaration order.
+#[test_only]
+public fun set_event_fields(
+    event: &ProfileSetEvent,
+): (
+    address,
+    address,
+    bool,
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+) {
+    (
+        event.party_id,
+        event.admin_cap_id,
+        event.had_profile,
+        event.previous_bio_short,
+        event.previous_bio_long,
+        event.previous_country,
+        event.previous_languages,
+        event.bio_short,
+        event.bio_long,
+        event.country,
+        event.languages,
+    )
+}
+
+/// Test-only descriptive alias for `set_event_fields`.
+#[test_only]
+public fun profile_set_event_fields(
+    event: &ProfileSetEvent,
+): (
+    address,
+    address,
+    bool,
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+    vector<u8>,
+    Option<vector<u8>>,
+    Option<vector<u8>>,
+    vector<vector<u8>>,
+) {
+    set_event_fields(event)
+}
+
+/// Test-only accessor for every `ProfileClearedEvent` field, in declaration
+/// order.
+#[test_only]
+public fun cleared_event_fields(
+    event: &ProfileClearedEvent,
+): (address, address, vector<u8>, Option<vector<u8>>, Option<vector<u8>>, vector<vector<u8>>) {
+    (
+        event.party_id,
+        event.admin_cap_id,
+        event.previous_bio_short,
+        event.previous_bio_long,
+        event.previous_country,
+        event.previous_languages,
+    )
+}
+
+/// Test-only descriptive alias for `cleared_event_fields`.
+#[test_only]
+public fun profile_cleared_event_fields(
+    event: &ProfileClearedEvent,
+): (address, address, vector<u8>, Option<vector<u8>>, Option<vector<u8>>, vector<vector<u8>>) {
+    cleared_event_fields(event)
 }

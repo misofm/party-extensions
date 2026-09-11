@@ -9,6 +9,8 @@ use language_code::language_code as lc;
 use partyos::party;
 use party_profile::party_profile as profile;
 use std::unit_test::{assert_eq, destroy};
+use sui::bcs;
+use sui::event;
 use sui::test_scenario::{Self as ts};
 
 // Mirrors `party::EUnauthorized` (party.move) for the wrong-cap abort test.
@@ -35,6 +37,8 @@ fun new_party(ctx: &mut TxContext): (party::Party, party::PartyAdminCap) {
 fun set_and_read_full_profile() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);
+    let party_id = object::id(&p).to_address();
+    let admin_cap_id = object::id(&cap).to_address();
 
     assert!(!profile::has_profile(&p));
     profile::set_profile(
@@ -45,6 +49,33 @@ fun set_and_read_full_profile() {
         option::some(cc::new(b"JP".to_string())),
         vector[lc::new(b"en".to_string()), lc::new(b"ja".to_string())],
     );
+
+    let events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(events.length(), 1);
+    let (
+        event_party_id,
+        event_cap_id,
+        had_profile,
+        previous_bio_short,
+        previous_bio_long,
+        previous_country,
+        previous_languages,
+        bio_short,
+        bio_long,
+        country,
+        languages,
+    ) = profile::set_event_fields(&events[0]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
+    assert!(!had_profile);
+    assert_eq!(previous_bio_short, vector[]);
+    assert_eq!(previous_bio_long, option::none());
+    assert_eq!(previous_country, option::none());
+    assert_eq!(previous_languages, vector[]);
+    assert_eq!(bio_short, b"Short bio.");
+    assert_eq!(bio_long, option::some(b"A much longer biography."));
+    assert_eq!(country, option::some(b"JP"));
+    assert_eq!(languages, vector[b"en", b"ja"]);
 
     assert!(profile::has_profile(&p));
     let card = profile::profile(&p);
@@ -61,26 +92,77 @@ fun set_and_read_full_profile() {
 fun replace_profile_in_place() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);
+    let party_id = object::id(&p).to_address();
+    let admin_cap_id = object::id(&cap).to_address();
 
-    // Only the required short bio; everything else empty/none.
-    profile::set_profile(&mut p, &cap, b"first".to_string(), option::none(), option::none(), vector[]);
-    assert_eq!(profile::profile(&p).bio_long(), option::none());
-
-    // The whole card is re-set in one call; the field is replaced, not stacked.
+    // Start with every optional field populated, then replace with the
+    // minimal valid card. The whole card is replaced, not stacked.
+    profile::set_profile(
+        &mut p,
+        &cap,
+        b"first".to_string(),
+        option::some(b"long".to_string()),
+        option::some(cc::new(b"JP".to_string())),
+        vector[lc::new(b"en".to_string()), lc::new(b"ja".to_string())],
+    );
     profile::set_profile(
         &mut p,
         &cap,
         b"second".to_string(),
-        option::some(b"long".to_string()),
-        option::some(cc::new(b"DE".to_string())),
-        vector[lc::new(b"de".to_string())],
+        option::none(),
+        option::none(),
+        vector[],
     );
+
+    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(set_events.length(), 2);
+    let (
+        event_party_id,
+        event_cap_id,
+        had_profile,
+        previous_bio_short,
+        previous_bio_long,
+        previous_country,
+        previous_languages,
+        bio_short,
+        bio_long,
+        country,
+        languages,
+    ) = profile::set_event_fields(&set_events[1]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
+    assert!(had_profile);
+    assert_eq!(previous_bio_short, b"first");
+    assert_eq!(previous_bio_long, option::some(b"long"));
+    assert_eq!(previous_country, option::some(b"JP"));
+    assert_eq!(previous_languages, vector[b"en", b"ja"]);
+    assert_eq!(bio_short, b"second");
+    assert_eq!(bio_long, option::none());
+    assert_eq!(country, option::none());
+    assert_eq!(languages, vector[]);
 
     let card = profile::profile(&p);
     assert_eq!(card.bio_short(), b"second".to_string());
-    assert_eq!(card.bio_long(), option::some(b"long".to_string()));
-    assert_eq!(card.country().destroy_some().code(), b"DE".to_string());
-    assert_eq!(card.languages().length(), 1);
+    assert_eq!(card.bio_long(), option::none());
+    assert!(card.country().is_none());
+    assert_eq!(card.languages().length(), 0);
+
+    // An identical replacement is still a write and emits one complete event.
+    profile::set_profile(&mut p, &cap, b"second".to_string(), option::none(), option::none(), vector[]);
+    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(set_events.length(), 3);
+    let (_, _, had_profile, previous_bio_short, previous_bio_long, previous_country,
+        previous_languages, bio_short, bio_long, country, languages) =
+        profile::set_event_fields(&set_events[2]);
+    assert!(had_profile);
+    assert_eq!(previous_bio_short, b"second");
+    assert_eq!(previous_bio_long, option::none());
+    assert_eq!(previous_country, option::none());
+    assert_eq!(previous_languages, vector[]);
+    assert_eq!(bio_short, b"second");
+    assert_eq!(bio_long, option::none());
+    assert_eq!(country, option::none());
+    assert_eq!(languages, vector[]);
 
     destroy(p);
     destroy(cap);
@@ -90,10 +172,46 @@ fun replace_profile_in_place() {
 fun clear_profile_removes_it() {
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);
-    profile::set_profile(&mut p, &cap, b"bio".to_string(), option::none(), option::none(), vector[]);
+    let party_id = object::id(&p).to_address();
+    let admin_cap_id = object::id(&cap).to_address();
+    profile::set_profile(
+        &mut p,
+        &cap,
+        b"bio".to_string(),
+        option::some(b"long".to_string()),
+        option::some(cc::new(b"DE".to_string())),
+        vector[lc::new(b"de".to_string())],
+    );
     profile::clear_profile(&mut p, &cap);
     assert!(!profile::has_profile(&p));
+
+    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    assert_eq!(cleared_events.length(), 1);
+    let (event_party_id, event_cap_id, previous_bio_short, previous_bio_long,
+        previous_country, previous_languages) =
+        profile::cleared_event_fields(&cleared_events[0]);
+    assert_eq!(event_party_id, party_id);
+    assert_eq!(event_cap_id, admin_cap_id);
+    assert_eq!(previous_bio_short, b"bio");
+    assert_eq!(previous_bio_long, option::some(b"long"));
+    assert_eq!(previous_country, option::some(b"DE"));
+    assert_eq!(previous_languages, vector[b"de"]);
+
+    // A minimal profile is also a real attached field and its clear carries
+    // the exact minimal snapshot.
+    profile::set_profile(&mut p, &cap, b"minimal".to_string(), option::none(), option::none(), vector[]);
+    profile::clear_profile(&mut p, &cap);
+    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    assert_eq!(cleared_events.length(), 2);
+    let (_, _, previous_bio_short, previous_bio_long, previous_country, previous_languages) =
+        profile::cleared_event_fields(&cleared_events[1]);
+    assert_eq!(previous_bio_short, b"minimal");
+    assert_eq!(previous_bio_long, option::none());
+    assert_eq!(previous_country, option::none());
+    assert_eq!(previous_languages, vector[]);
+
     profile::clear_profile(&mut p, &cap); // no-op
+    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), 2);
     destroy(p);
     destroy(cap);
 }
@@ -124,6 +242,120 @@ fun shared_party_profile_workflow() {
     assert_eq!(profile::profile(&p).bio_short(), b"Shared profile".to_string());
     ts::return_shared(p);
     scenario.end();
+}
+
+#[test]
+fun event_bytes_preserve_multibyte_values_and_language_order() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, cap) = new_party(ctx);
+    let short = vector[0xC3u8, 0xA9u8].to_string(); // é
+    let long = vector[0xE2u8, 0x98u8, 0x83u8].to_string(); // ☃
+    profile::set_profile(
+        &mut p,
+        &cap,
+        short,
+        option::some(long),
+        option::some(cc::new(b"JP".to_string())),
+        vector[lc::new(b"ja".to_string()), lc::new(b"en".to_string())],
+    );
+
+    let events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(events.length(), 1);
+    let (_, _, had_profile, previous_bio_short, previous_bio_long, previous_country,
+        previous_languages, bio_short, bio_long, country, languages) =
+        profile::set_event_fields(&events[0]);
+    assert!(!had_profile);
+    assert_eq!(previous_bio_short, vector[]);
+    assert_eq!(previous_bio_long, option::none());
+    assert_eq!(previous_country, option::none());
+    assert_eq!(previous_languages, vector[]);
+    assert_eq!(bio_short, vector[0xC3u8, 0xA9u8]);
+    assert_eq!(bio_long, option::some(vector[0xE2u8, 0x98u8, 0x83u8]));
+    assert_eq!(country, option::some(b"JP"));
+    assert_eq!(languages, vector[b"ja", b"en"]);
+
+    destroy(p);
+    destroy(cap);
+}
+
+#[test]
+fun maximum_profile_event_sizes_are_stable() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, cap) = new_party(ctx);
+    let languages = vector[
+        lc::new(b"aa".to_string()), lc::new(b"ab".to_string()),
+        lc::new(b"ae".to_string()), lc::new(b"af".to_string()),
+        lc::new(b"ak".to_string()), lc::new(b"am".to_string()),
+        lc::new(b"an".to_string()), lc::new(b"ar".to_string()),
+        lc::new(b"as".to_string()), lc::new(b"av".to_string()),
+    ];
+    let short = long_string(300);
+    let long = long_string(8192);
+    profile::set_profile(
+        &mut p,
+        &cap,
+        short,
+        option::some(long),
+        option::some(cc::new(b"JP".to_string())),
+        languages,
+    );
+    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(bcs::to_bytes(&set_events[0]).length(), 8601);
+
+    let languages = vector[
+        lc::new(b"aa".to_string()), lc::new(b"ab".to_string()),
+        lc::new(b"ae".to_string()), lc::new(b"af".to_string()),
+        lc::new(b"ak".to_string()), lc::new(b"am".to_string()),
+        lc::new(b"an".to_string()), lc::new(b"ar".to_string()),
+        lc::new(b"as".to_string()), lc::new(b"av".to_string()),
+    ];
+    profile::set_profile(
+        &mut p,
+        &cap,
+        long_string(300),
+        option::some(long_string(8192)),
+        option::some(cc::new(b"JP".to_string())),
+        languages,
+    );
+    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    assert_eq!(bcs::to_bytes(&set_events[1]).length(), 17129);
+
+    profile::clear_profile(&mut p, &cap);
+    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    assert_eq!(bcs::to_bytes(&cleared_events[0]).length(), 8596);
+
+    destroy(p);
+    destroy(cap);
+}
+
+#[test]
+fun views_are_silent() {
+    let before_set = event::events_by_type<profile::ProfileSetEvent>().length();
+    let before_clear = event::events_by_type<profile::ProfileClearedEvent>().length();
+    let ctx = &mut tx_context::dummy();
+    let (mut p, cap) = new_party(ctx);
+
+    assert!(!profile::has_profile(&p));
+    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), before_set);
+    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), before_clear);
+
+    profile::set_profile(&mut p, &cap, b"bio".to_string(), option::none(), option::none(), vector[]);
+    let set_count = event::events_by_type<profile::ProfileSetEvent>().length();
+    let clear_count = event::events_by_type<profile::ProfileClearedEvent>().length();
+    assert!(profile::has_profile(&p));
+    assert_eq!(profile::profile(&p).bio_short(), b"bio".to_string());
+    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), set_count);
+    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), clear_count);
+
+    profile::clear_profile(&mut p, &cap);
+    let set_count = event::events_by_type<profile::ProfileSetEvent>().length();
+    let clear_count = event::events_by_type<profile::ProfileClearedEvent>().length();
+    assert!(!profile::has_profile(&p));
+    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), set_count);
+    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), clear_count);
+
+    destroy(p);
+    destroy(cap);
 }
 
 /// The bound is inclusive, and it is on bytes rather than characters — 8 KB of
@@ -221,5 +453,63 @@ fun set_profile_with_wrong_cap_aborts() {
 
     // A cap for a different party must not authorize writes to `p`.
     profile::set_profile(&mut p, &other_cap, b"bio".to_string(), option::none(), option::none(), vector[]);
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun set_profile_replace_with_wrong_cap_aborts() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, cap) = new_party(ctx);
+    let (_other, other_cap) = new_party(ctx);
+    profile::set_profile(&mut p, &cap, b"initial".to_string(), option::none(), option::none(), vector[]);
+    // Authorization must happen before reading or mutating the existing
+    // snapshot.
+    profile::set_profile(&mut p, &other_cap, b"replacement".to_string(), option::none(), option::none(), vector[]);
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun clear_profile_with_wrong_cap_aborts_when_absent() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, _cap) = new_party(ctx);
+    let (_other, other_cap) = new_party(ctx);
+    profile::clear_profile(&mut p, &other_cap);
+    abort
+}
+
+#[test, expected_failure(abort_code = EUnauthorized, location = partyos::party)]
+fun clear_profile_with_wrong_cap_aborts_when_existing() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, cap) = new_party(ctx);
+    let (_other, other_cap) = new_party(ctx);
+    profile::set_profile(&mut p, &cap, b"initial".to_string(), option::none(), option::none(), vector[]);
+    profile::clear_profile(&mut p, &other_cap);
+    abort
+}
+
+#[test, expected_failure(abort_code = profile::EEmptyBioShort)]
+fun validation_precedes_wrong_cap_for_empty_short_bio() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, _cap) = new_party(ctx);
+    let (_other, other_cap) = new_party(ctx);
+    // Validation intentionally remains before `uid_mut`: the caller sees the
+    // local validation error even when the cap is unrelated.
+    profile::set_profile(&mut p, &other_cap, b"".to_string(), option::none(), option::none(), vector[]);
+    abort
+}
+
+#[test, expected_failure(abort_code = profile::EEmptyBioLong)]
+fun validation_precedes_wrong_cap_for_empty_long_bio() {
+    let ctx = &mut tx_context::dummy();
+    let (mut p, _cap) = new_party(ctx);
+    let (_other, other_cap) = new_party(ctx);
+    profile::set_profile(
+        &mut p,
+        &other_cap,
+        b"bio".to_string(),
+        option::some(b"".to_string()),
+        option::none(),
+        vector[],
+    );
     abort
 }

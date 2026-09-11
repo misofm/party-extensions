@@ -54,9 +54,15 @@ with `EUnauthorized` at `partyos::party`.
 
 | Event | When | Payload |
 |---|---|---|
-| `RoleAddedEvent` | `add_role` | `party_id`, `role` (the canonical name) |
-| `RoleRemovedEvent` | `remove_role` | `party_id`, `role` (the canonical name) |
-| `RolesClearedEvent` | `clear_roles`, only when a set existed | `party_id` |
+| `RoleAddedEvent` | `add_role` | `party_id`, `admin_cap_id`, stable `role_kind` (`Artist` 0 through `Custom` 8), raw UTF-8 `role_name`, and `roles_count_before`/`roles_count_after` |
+| `RoleRemovedEvent` | `remove_role` | `party_id`, `admin_cap_id`, stable `role_kind`, raw UTF-8 `role_name`, and `roles_count_before`/`roles_count_after` |
+| `RolesClearedEvent` | `clear_roles`, only when a set existed | `party_id`, `admin_cap_id`, ordered `removed_role_kinds`, ordered raw `removed_role_names`, and `roles_count_before`/`roles_count_after` |
+
+`role_kind` is a private event discriminator: Artist 0, Producer 1, Dj 2,
+Composer 3, Songwriter 4, Band 5, Label 6, Collective 7, and Custom 8.
+The kind/name pair deliberately distinguishes canonical `Artist` from
+`Custom("Artist")`. A populated clear emits one event; an absent clear is
+authorized but silent. Event snapshots preserve set insertion order.
 
 ## Errors
 
@@ -78,7 +84,7 @@ Set-mechanics aborts surface from the primitive, at `typed_set::typed_set`:
 ## Dependencies
 
 - [`partyos`](https://github.com/misofm/partyos) at
-  `819fde6f34c0bc7eeb57ec7340cdf13dc56b3fca` — the authorization core;
+  `841a875a4989082a0ebeb1beb464b71f9ea2bd73` — the authorization core;
   every write goes through `party::uid_mut(cap)`.
 - [`typed_set`](https://github.com/unconfirmedlabs/typed_set) at
   `b37474cbde166b7ddf8a3b615cd89f90182ace6f` — bounded-set storage,

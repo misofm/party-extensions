@@ -2,8 +2,8 @@
 
 **Repository:** `https://github.com/misofm/partyos-extensions`
 **Audit target:** pending working-tree source on `main` (matches the repository's current `HEAD`)
-**Date:** 2026-09-02
-**Toolchain:** `sui 1.78.1-722ac4fcf484`
+**Date:** 2026-09-11
+**Toolchain:** `sui 1.79.0`
 
 ## Verdict
 
@@ -15,8 +15,10 @@ Release-ready. No security or correctness findings remain.
 `ArtistRole` values through `typed_set`: eight closed canonical variants plus a
 validated `Custom` name of 1–60 bytes. All mutations require the matching
 `PartyAdminCap`; final removal reclaims the field, clear is idempotent, and
-views are permissionless. Exact enum equality deliberately distinguishes a
-canonical role from a same-spelled custom role.
+views are permissionless. Typed events include the party and cap addresses,
+stable role kind/name pairs, and before/after counts; clear snapshots all
+removed roles. Exact enum equality deliberately distinguishes a canonical role
+from a same-spelled custom role.
 
 ## Exact manifest pins
 
@@ -29,9 +31,9 @@ The manifest has no local-path or floating dependencies.
 
 ## Verification
 
-- Package tests: **9/9**, including **7** expected-failure paths covering both
-  custom-name validators, duplicate, missing item, capacity, wrong cap, and
-  authorization-before-capacity.
+- Package tests: **22/22**, including **14** expected-failure paths covering
+  both custom-name validators, duplicate/full precedence, missing item,
+  capacity, and wrong-cap remove/clear authorization.
 - Production instruction coverage: **100.00%**.
 - End-to-end scenario covers Party share, cap transfer, later role write, and
   permissionless read from the shared Party.

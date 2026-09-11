@@ -50,7 +50,7 @@ fun set_and_read_full_profile() {
         vector[lc::new(b"en".to_string()), lc::new(b"ja".to_string())],
     );
 
-    let events = event::events_by_type<profile::ProfileSetEvent>();
+    let events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(events.length(), 1);
     let (
         event_party_id,
@@ -114,7 +114,7 @@ fun replace_profile_in_place() {
         vector[],
     );
 
-    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    let set_events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(set_events.length(), 2);
     let (
         event_party_id,
@@ -149,7 +149,7 @@ fun replace_profile_in_place() {
 
     // An identical replacement is still a write and emits one complete event.
     profile::set_profile(&mut p, &cap, b"second".to_string(), option::none(), option::none(), vector[]);
-    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    let set_events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(set_events.length(), 3);
     let (_, _, had_profile, previous_bio_short, previous_bio_long, previous_country,
         previous_languages, bio_short, bio_long, country, languages) =
@@ -185,7 +185,7 @@ fun clear_profile_removes_it() {
     profile::clear_profile(&mut p, &cap);
     assert!(!profile::has_profile(&p));
 
-    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    let cleared_events = event::events_by_type<profile::PartyProfileClearedEvent>();
     assert_eq!(cleared_events.length(), 1);
     let (event_party_id, event_cap_id, previous_bio_short, previous_bio_long,
         previous_country, previous_languages) =
@@ -201,7 +201,7 @@ fun clear_profile_removes_it() {
     // the exact minimal snapshot.
     profile::set_profile(&mut p, &cap, b"minimal".to_string(), option::none(), option::none(), vector[]);
     profile::clear_profile(&mut p, &cap);
-    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    let cleared_events = event::events_by_type<profile::PartyProfileClearedEvent>();
     assert_eq!(cleared_events.length(), 2);
     let (_, _, previous_bio_short, previous_bio_long, previous_country, previous_languages) =
         profile::cleared_event_fields(&cleared_events[1]);
@@ -211,7 +211,7 @@ fun clear_profile_removes_it() {
     assert_eq!(previous_languages, vector[]);
 
     profile::clear_profile(&mut p, &cap); // no-op
-    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), 2);
+    assert_eq!(event::events_by_type<profile::PartyProfileClearedEvent>().length(), 2);
     destroy(p);
     destroy(cap);
 }
@@ -259,7 +259,7 @@ fun event_bytes_preserve_multibyte_values_and_language_order() {
         vector[lc::new(b"ja".to_string()), lc::new(b"en".to_string())],
     );
 
-    let events = event::events_by_type<profile::ProfileSetEvent>();
+    let events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(events.length(), 1);
     let (_, _, had_profile, previous_bio_short, previous_bio_long, previous_country,
         previous_languages, bio_short, bio_long, country, languages) =
@@ -299,7 +299,7 @@ fun maximum_profile_event_sizes_are_stable() {
         option::some(cc::new(b"JP".to_string())),
         languages,
     );
-    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    let set_events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(bcs::to_bytes(&set_events[0]).length(), 8601);
 
     let languages = vector[
@@ -317,11 +317,11 @@ fun maximum_profile_event_sizes_are_stable() {
         option::some(cc::new(b"JP".to_string())),
         languages,
     );
-    let set_events = event::events_by_type<profile::ProfileSetEvent>();
+    let set_events = event::events_by_type<profile::PartyProfileSetEvent>();
     assert_eq!(bcs::to_bytes(&set_events[1]).length(), 17129);
 
     profile::clear_profile(&mut p, &cap);
-    let cleared_events = event::events_by_type<profile::ProfileClearedEvent>();
+    let cleared_events = event::events_by_type<profile::PartyProfileClearedEvent>();
     assert_eq!(bcs::to_bytes(&cleared_events[0]).length(), 8596);
 
     destroy(p);
@@ -330,29 +330,29 @@ fun maximum_profile_event_sizes_are_stable() {
 
 #[test]
 fun views_are_silent() {
-    let before_set = event::events_by_type<profile::ProfileSetEvent>().length();
-    let before_clear = event::events_by_type<profile::ProfileClearedEvent>().length();
+    let before_set = event::events_by_type<profile::PartyProfileSetEvent>().length();
+    let before_clear = event::events_by_type<profile::PartyProfileClearedEvent>().length();
     let ctx = &mut tx_context::dummy();
     let (mut p, cap) = new_party(ctx);
 
     assert!(!profile::has_profile(&p));
-    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), before_set);
-    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), before_clear);
+    assert_eq!(event::events_by_type<profile::PartyProfileSetEvent>().length(), before_set);
+    assert_eq!(event::events_by_type<profile::PartyProfileClearedEvent>().length(), before_clear);
 
     profile::set_profile(&mut p, &cap, b"bio".to_string(), option::none(), option::none(), vector[]);
-    let set_count = event::events_by_type<profile::ProfileSetEvent>().length();
-    let clear_count = event::events_by_type<profile::ProfileClearedEvent>().length();
+    let set_count = event::events_by_type<profile::PartyProfileSetEvent>().length();
+    let clear_count = event::events_by_type<profile::PartyProfileClearedEvent>().length();
     assert!(profile::has_profile(&p));
     assert_eq!(profile::profile(&p).bio_short(), b"bio".to_string());
-    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), set_count);
-    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), clear_count);
+    assert_eq!(event::events_by_type<profile::PartyProfileSetEvent>().length(), set_count);
+    assert_eq!(event::events_by_type<profile::PartyProfileClearedEvent>().length(), clear_count);
 
     profile::clear_profile(&mut p, &cap);
-    let set_count = event::events_by_type<profile::ProfileSetEvent>().length();
-    let clear_count = event::events_by_type<profile::ProfileClearedEvent>().length();
+    let set_count = event::events_by_type<profile::PartyProfileSetEvent>().length();
+    let clear_count = event::events_by_type<profile::PartyProfileClearedEvent>().length();
     assert!(!profile::has_profile(&p));
-    assert_eq!(event::events_by_type<profile::ProfileSetEvent>().length(), set_count);
-    assert_eq!(event::events_by_type<profile::ProfileClearedEvent>().length(), clear_count);
+    assert_eq!(event::events_by_type<profile::PartyProfileSetEvent>().length(), set_count);
+    assert_eq!(event::events_by_type<profile::PartyProfileClearedEvent>().length(), clear_count);
 
     destroy(p);
     destroy(cap);

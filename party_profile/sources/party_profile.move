@@ -78,7 +78,7 @@ public struct Profile has store, drop {
 /// Emitted when a party's profile is set or updated. The event carries the
 /// complete prior and resulting profile values as raw UTF-8 bytes so an
 /// indexer can reconcile a replacement without re-reading the dynamic field.
-public struct ProfileSetEvent has copy, drop {
+public struct PartyProfileSetEvent has copy, drop {
     party_id: address,
     admin_cap_id: address,
     had_profile: bool,
@@ -94,7 +94,7 @@ public struct ProfileSetEvent has copy, drop {
 
 /// Emitted when a party's profile is cleared. It carries the complete profile
 /// snapshot that was removed; no event is emitted when the field is absent.
-public struct ProfileClearedEvent has copy, drop {
+public struct PartyProfileClearedEvent has copy, drop {
     party_id: address,
     admin_cap_id: address,
     previous_bio_short: vector<u8>,
@@ -144,7 +144,7 @@ public fun set_profile(
     } else {
         df::add(uid, ProfileKey(), profile);
     };
-    emit(ProfileSetEvent {
+    emit(PartyProfileSetEvent {
         party_id,
         admin_cap_id,
         had_profile,
@@ -174,7 +174,7 @@ public fun clear_profile(self: &mut Party, cap: &PartyAdminCap) {
             previous_country,
             previous_languages,
         ) = profile_bytes(&previous);
-        emit(ProfileClearedEvent {
+        emit(PartyProfileClearedEvent {
             party_id,
             admin_cap_id,
             previous_bio_short,
@@ -282,10 +282,10 @@ fun validate_languages(languages: &vector<LanguageCode>) {
 
 // === Test Functions ===
 
-/// Test-only accessor for every `ProfileSetEvent` field, in declaration order.
+/// Test-only accessor for every `PartyProfileSetEvent` field, in declaration order.
 #[test_only]
 public fun set_event_fields(
-    event: &ProfileSetEvent,
+    event: &PartyProfileSetEvent,
 ): (
     address,
     address,
@@ -317,7 +317,7 @@ public fun set_event_fields(
 /// Test-only descriptive alias for `set_event_fields`.
 #[test_only]
 public fun profile_set_event_fields(
-    event: &ProfileSetEvent,
+    event: &PartyProfileSetEvent,
 ): (
     address,
     address,
@@ -334,11 +334,11 @@ public fun profile_set_event_fields(
     set_event_fields(event)
 }
 
-/// Test-only accessor for every `ProfileClearedEvent` field, in declaration
+/// Test-only accessor for every `PartyProfileClearedEvent` field, in declaration
 /// order.
 #[test_only]
 public fun cleared_event_fields(
-    event: &ProfileClearedEvent,
+    event: &PartyProfileClearedEvent,
 ): (address, address, vector<u8>, Option<vector<u8>>, Option<vector<u8>>, vector<vector<u8>>) {
     (
         event.party_id,
@@ -353,7 +353,7 @@ public fun cleared_event_fields(
 /// Test-only descriptive alias for `cleared_event_fields`.
 #[test_only]
 public fun profile_cleared_event_fields(
-    event: &ProfileClearedEvent,
+    event: &PartyProfileClearedEvent,
 ): (address, address, vector<u8>, Option<vector<u8>>, Option<vector<u8>>, vector<vector<u8>>) {
     cleared_event_fields(event)
 }

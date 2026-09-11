@@ -6,23 +6,36 @@ module party_social::party_social_tests;
 
 use party_social::party_social as social;
 use std::unit_test::assert_eq;
+use sui::event;
 
 #[test]
 fun added_platform_constructors() {
+    let events_before = event::num_events();
     assert_eq!(social::discord(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::telegram(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::reddit(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::twitch(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::facebook(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
 }
 
 #[test]
 fun constructors_wrap_handles() {
+    let events_before = event::num_events();
     assert_eq!(social::x(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::instagram(b"miso.network".to_string()).data().handle(), b"miso.network".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::threads(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::tiktok(b"miso".to_string()).data().handle(), b"miso".to_string());
+    assert_eq!(event::num_events(), events_before);
     assert_eq!(social::youtube(b"@miso".to_string()).data().handle(), b"@miso".to_string());
+    assert_eq!(event::num_events(), events_before);
 }
 
 #[test, expected_failure(abort_code = 0, location = party_social::party_social)] // EEmptyHandle

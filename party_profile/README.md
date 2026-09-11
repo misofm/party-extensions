@@ -51,8 +51,8 @@ with `EUnauthorized` at `partyos::party`.
 
 | Event | When | Payload |
 |---|---|---|
-| `ProfileSetEvent` | Profile created or replaced via `set_profile`, including an identical replacement | `party_id`, `admin_cap_id`, `had_profile`, previous/current `bio_short`, `bio_long`, `country`, and ordered `languages` as raw UTF-8 byte vectors. Serialized size is 8601 bytes at the maximum initial payload and 17129 bytes at the maximum replacement payload. |
-| `ProfileClearedEvent` | Existing profile removed via `clear_profile` — not emitted when the call is a no-op | `party_id`, `admin_cap_id`, and the previous `bio_short`, `bio_long`, `country`, and ordered `languages` byte vectors. Maximum serialized size is 8596 bytes. |
+| `PartyProfileSetEvent` | Profile created or replaced via `set_profile`, including an identical replacement | `party_id`, `admin_cap_id`, `had_profile`, previous/current `bio_short`, `bio_long`, `country`, and ordered `languages` as raw UTF-8 byte vectors. Serialized size is 8601 bytes at the maximum initial payload and 17129 bytes at the maximum replacement payload. |
+| `PartyProfileClearedEvent` | Existing profile removed via `clear_profile` — not emitted when the call is a no-op | `party_id`, `admin_cap_id`, and the previous `bio_short`, `bio_long`, `country`, and ordered `languages` byte vectors. Maximum serialized size is 8596 bytes. |
 
 ## Errors
 
